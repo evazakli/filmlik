@@ -384,8 +384,7 @@ function populateMovieCard(movie) {
   poster.src = movie.img;
   poster.alt = `${movie.t} (${movie.y || ''}) film afişi`;
 
-  const scoreStr = movie.r ? movie.r.toFixed(1) : '';
-  document.title = `🎬 ${movie.t}${movie.y ? ` (${movie.y})` : ''}${scoreStr ? ` ★ ${scoreStr}` : ''} | Film Seç`;
+  document.title = 'filmlik';
 
   const titleLink = document.getElementById('movie-title-link');
   const imdbUrl = `https://www.imdb.com/title/${movie.id}/`;

@@ -1,4 +1,4 @@
-# 🎬 Film Seç — Sinematik & Kriptografik Rastgele Film Keşif Platformu
+# 🎬 filmlik
 
 ![HTML5](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![Modern CSS](https://img.shields.io/badge/CSS-OKLCH%20%26%20View%20Transitions-1572B6?style=flat-square&logo=css3&logoColor=white)
@@ -6,9 +6,9 @@
 ![IMDb Dataset](https://img.shields.io/badge/IMDb%207.0%2B-4.682%20Film-F5C518?style=flat-square&logo=imdb&logoColor=black)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Ready-222222?style=flat-square&logo=githubpages&logoColor=white)
 
-![Film Seç Önizleme](og-preview.jpg)
+![filmlik](og-preview.jpg)
 
-**"Bu akşam ne izlesem?"** sorusunu karmaşık menüler, reklamlar ve algoritma önyargıları olmadan çözen; ultra-minimalist, görsel ve işitsel olarak şaşırtıcı bir sinema keşif uygulaması.
+**"Bu akşam ne izlesem?"** sorusunu karmaşık menüler, reklamlar ve algoritma önyargıları olmadan çözen; ultra-minimalist, görsel ve işitsel olarak şaşırtıcı bir sinema keşif uygulaması: **filmlik**.
 
 Uygulama açıldığında kullanıcıyı hiçbir metin kalabalığı olmadan yalnızca karanlık bir uzay boşluğu, etkileşimli yıldız alanı ve merkezdeki **"FİLM SEÇ"** butonu karşılar. Butona basıldığı anda devreye giren 3 boyutlu görsel şovların ardından, **IMDb puanı 7.0 ve üzerinde olan 4.682 gerçek film** arasından tamamen rastgele bir yapım sunulur.
 
