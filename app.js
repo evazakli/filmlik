@@ -522,8 +522,21 @@ async function runRiftSpectacle(visualBox, chosenMovie, decoys) {
   coreImg.src = chosenMovie.img;
 }
 
+function getCandidatePool() {
+  const selectEl = document.getElementById('genre-select');
+  const selectedGenre = selectEl ? selectEl.value : 'all';
+  if (!selectedGenre || selectedGenre === 'all') {
+    return state.movies;
+  }
+  const filtered = state.movies.filter(
+    (m) => Array.isArray(m.g) && m.g.includes(selectedGenre)
+  );
+  return filtered.length > 0 ? filtered : state.movies;
+}
+
 async function triggerRandomMovieRoll() {
-  if (state.isRolling || state.movies.length === 0) return;
+  const pool = getCandidatePool();
+  if (state.isRolling || pool.length === 0) return;
   state.isRolling = true;
 
   const portalZone = document.getElementById('portal-trigger-zone');
@@ -535,9 +548,9 @@ async function triggerRandomMovieRoll() {
   // Hide the initial big button once clicked
   portalZone.hidden = true;
 
-  // 100% Unbiased Cryptographic Uniform Random Selection
-  const chosenIndex = getCryptoRandomInt(state.movies.length);
-  const chosenMovie = state.movies[chosenIndex];
+  // 100% Unbiased Cryptographic Uniform Random Selection within the 7.0+ (& selected genre) pool
+  const chosenIndex = getCryptoRandomInt(pool.length);
+  const chosenMovie = pool[chosenIndex];
 
   const preloadImg = new Image();
   preloadImg.src = chosenMovie.img;
@@ -558,7 +571,7 @@ async function triggerRandomMovieRoll() {
     if (canvasEngine) canvasEngine.setWarp(24);
     synth.playPortalCharge();
 
-    const decoys = Array.from({ length: 16 }, () => state.movies[getCryptoRandomInt(state.movies.length)]);
+    const decoys = Array.from({ length: 16 }, () => pool[getCryptoRandomInt(pool.length)]);
     const modes = ['vortex', 'tarot', 'rift'];
     const mode = modes[state.chaosCounter % modes.length];
     state.chaosCounter++;
@@ -610,20 +623,29 @@ async function initApp() {
   setupPointerInteractions();
 
   const rollBtn = document.getElementById('roll-movie-btn');
+  const genreSelect = document.getElementById('genre-select');
 
   if (Array.isArray(window.MOVIES_DATA) && window.MOVIES_DATA.length > 0) {
-    state.movies = window.MOVIES_DATA;
+    state.movies = window.MOVIES_DATA.filter((m) => typeof m.r === 'number' && m.r >= 7.0);
     rollBtn.disabled = false;
   } else {
     try {
       const res = await fetch('./movies.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      state.movies = await res.json();
+      const data = await res.json();
+      state.movies = data.filter((m) => typeof m.r === 'number' && m.r >= 7.0);
       rollBtn.disabled = false;
     } catch (err) {
       console.error('Failed to load movie data:', err);
     }
   }
+
+  genreSelect?.addEventListener('change', () => {
+    const g = genreSelect.value;
+    if (g && g !== 'all') {
+      applyMovieTheme({ g: [g] });
+    }
+  });
 
   rollBtn.addEventListener('click', triggerRandomMovieRoll);
   document.getElementById('reroll-btn')?.addEventListener('click', triggerRandomMovieRoll);

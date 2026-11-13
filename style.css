@@ -25,7 +25,7 @@
     list-style: none;
   }
 
-  button {
+  button, select {
     font: inherit;
     color: inherit;
   }
@@ -119,7 +119,7 @@
     max-inline-size: 70ch;
   }
 
-  :where(a:any-link, button):focus-visible {
+  :where(a:any-link, button, select):focus-visible {
     outline: 3px solid var(--accent-primary);
     outline-offset: 4px;
   }
@@ -200,8 +200,84 @@
     inline-size: 100%;
     max-inline-size: 1060px;
     padding: clamp(1rem, 3vw, 2.5rem);
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  /* ==========================================================================
+     MINIMALIST GENRE SELECTOR
+     (modern-web-guidance: branded-select-styling, forms)
+     ========================================================================== */
+  .genre-bar {
+    position: relative;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .genre-select,
+  .genre-select::picker(select) {
+    appearance: base-select;
+  }
+
+  .genre-select {
+    min-inline-size: 13.5rem;
+    min-block-size: 3rem;
+    padding-block: 0.6rem;
+    padding-inline: 1.25rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, var(--border-subtle));
+    background-color: oklch(0.16 0.03 270 / 0.88);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px -8px oklch(0 0 0 / 0.65);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--spring-easing);
+
+    &:hover {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 22px -4px color-mix(in oklab, var(--accent-primary) 45%, transparent);
+    }
+  }
+
+  .genre-select::picker(select) {
+    background-color: oklch(0.14 0.025 270);
+    color: var(--text-primary);
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, var(--border-subtle));
+    border-radius: 1rem;
+    padding: 0.45rem;
+    box-shadow: 0 24px 60px oklch(0 0 0 / 0.85);
+  }
+
+  .genre-select::picker-icon {
+    color: var(--accent-primary);
+  }
+
+  .genre-select option {
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.6rem;
+    background-color: oklch(0.14 0.025 270);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .genre-select option:hover {
+    background-color: oklch(0.22 0.04 270);
+  }
+
+  .genre-select option::checkmark {
+    color: var(--accent-primary);
   }
 
   /* ==========================================================================
