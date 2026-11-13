@@ -1,0 +1,886 @@
+@layer reset, base, theme, components, utilities;
+
+/* Registered custom properties for interactive spotlight reveal (modern-web-guidance: interactive-content-reveal) */
+@property --inner-size {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --outer-size {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@layer reset {
+  html, body, div, span, main, section, article, header, footer,
+  h1, h2, p, ul, li, dl, dt, dd, button, a, img, svg, canvas {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  img, svg, canvas {
+    display: block;
+    max-inline-size: 100%;
+  }
+}
+
+@layer theme {
+  :root {
+    --in-oklab: ;
+    --in-oklch: ;
+
+    --bg-void: oklch(0.09 0.018 270);
+    --text-primary: oklch(0.97 0.01 270);
+    --text-secondary: oklch(0.78 0.02 270);
+    --text-muted: oklch(0.60 0.02 270);
+
+    --accent-primary: oklch(0.80 0.19 75);
+    --accent-secondary: oklch(0.70 0.22 330);
+    --accent-tertiary: oklch(0.76 0.17 205);
+
+    --border-subtle: oklch(0.95 0.02 270 / 0.12);
+    --border-glow: oklch(0.80 0.19 75 / 0.48);
+
+    --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Physics-based spring easing (modern-web-guidance: physics-based-easing) */
+    --spring-easing: linear(
+      0, 0.016 0.5%, 0.06 1%, 0.226 2%, 1.116 5.4%, 1.375 6.6%, 1.527 7.7%,
+      1.565 8.2%, 1.585 8.8%, 1.581 9.3%, 1.559 9.8%, 1.458 10.9%, 0.937 14.3%,
+      0.784 15.5%, 0.693 16.6%, 0.67 17.1%, 0.657 17.7%, 0.671 18.7%, 0.729 19.8%,
+      1.042 23.3%, 1.13 24.5%, 1.182 25.6%, 1.201 26.7%, 1.192 27.7%, 1.156 28.8%,
+      0.977 32.2%, 0.925 33.4%, 0.894 34.5%, 0.882 35.6%, 0.887 36.6%, 0.907 37.7%,
+      1.045 42.4%, 1.069 44.5%, 1.059 46.3%, 0.979 50.9%, 0.96 53.4%, 0.966 55.3%,
+      1.013 59.9%, 1.024 62.3%, 0.986 71.2%, 1.008 79.9%, 0.995 88.9%, 1
+    );
+
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    --inner-size: 0px;
+    --outer-size: 0px;
+  }
+
+  @supports (background: linear-gradient(in oklab, white, black)) {
+    :root {
+      --in-oklab: in oklab;
+      --in-oklch: in oklch;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    text-align: start;
+    overflow-x: clip;
+  }
+
+  body {
+    min-block-size: 100dvh;
+    display: grid;
+    place-items: center;
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--accent-secondary) 14%, transparent) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, color-mix(in oklab, var(--accent-tertiary) 14%, transparent) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--accent-primary) 10%, transparent) 0%, transparent 60%),
+      var(--bg-void);
+    transition: background 0.8s ease;
+  }
+
+  h1, h2 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+    overflow-wrap: break-word;
+    max-inline-size: 70ch;
+  }
+
+  :where(a:any-link, button):focus-visible {
+    outline: 3px solid var(--accent-primary);
+    outline-offset: 4px;
+  }
+}
+
+@layer components {
+  .visually-hidden:where(:not(:focus-within, :active)) {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Interactive 3D Starfield Canvas */
+  #vortex-canvas {
+    position: fixed;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  /* Interactive Pointer Spotlight Reveal (modern-web-guidance: interactive-content-reveal) */
+  .spotlight-reveal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        circle at var(--mouse-x) var(--mouse-y),
+        color-mix(in oklab, var(--accent-primary) 24%, transparent),
+        color-mix(in oklab, var(--accent-secondary) 12%, transparent) 45%,
+        transparent 70%
+      );
+    transition: --inner-size 0.25s ease-out, --outer-size 0.25s ease-out;
+    -webkit-mask-image: radial-gradient(
+      circle at var(--mouse-x) var(--mouse-y),
+      black var(--inner-size, 0%),
+      transparent var(--outer-size, 0%)
+    );
+    mask-image: radial-gradient(
+      circle at var(--mouse-x) var(--mouse-y),
+      black var(--inner-size, 0%),
+      transparent var(--outer-size, 0%)
+    );
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+
+  body:hover .spotlight-reveal-layer {
+    --inner-size: 160px;
+    --outer-size: 420px;
+  }
+
+  .cinema-grain {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.2;
+    background-image: radial-gradient(oklch(0.95 0 0 / 0.14) 1px, transparent 0);
+    background-size: 24px 24px;
+    mix-blend-mode: overlay;
+  }
+
+  .main-stage {
+    inline-size: 100%;
+    max-inline-size: 1060px;
+    padding: clamp(1rem, 3vw, 2.5rem);
+    display: grid;
+    place-items: center;
+  }
+
+  /* ==========================================================================
+     THE SOLE CENTERPIECE BUTTON (Initial State)
+     ========================================================================== */
+  .portal-trigger-zone {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 22rem;
+    block-size: 22rem;
+  }
+
+  .portal-trigger-zone[hidden] {
+    display: none;
+  }
+
+  .portal-core-glow {
+    position: absolute;
+    inline-size: 14rem;
+    block-size: 14rem;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--accent-primary) 38%, transparent) 0%,
+      color-mix(in oklab, var(--accent-secondary) 20%, transparent) 50%,
+      transparent 75%
+    );
+    filter: blur(22px);
+    pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite alternate;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  @keyframes pulse-glow {
+    from { scale: 0.88; opacity: 0.65; }
+    to { scale: 1.18; opacity: 1; }
+  }
+
+  .portal-rings {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    border: 1px dashed color-mix(in oklab, var(--accent-primary) 40%, transparent);
+    animation: ring-rotate 22s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  .portal-rings::before,
+  .portal-rings::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .portal-rings::before {
+    inset: 1.75rem;
+    border: 1px solid color-mix(in oklab, var(--accent-tertiary) 28%, transparent);
+  }
+
+  .portal-rings::after {
+    inset: -1.5rem;
+    border: 1px solid color-mix(in oklab, var(--accent-secondary) 18%, transparent);
+  }
+
+  @keyframes ring-rotate {
+    to { rotate: 1turn; }
+  }
+
+  .quantum-roll-btn {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    min-block-size: 5.2rem;
+    padding-block: 1.2rem;
+    padding-inline: 3.2rem;
+    border-radius: 999px;
+    border: 2px solid color-mix(in oklab, var(--accent-primary) 80%, white);
+    background: linear-gradient(
+      135deg var(--in-oklch),
+      oklch(0.23 0.07 280),
+      oklch(0.14 0.03 265)
+    );
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.65rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow:
+      0 0 0 8px color-mix(in oklab, var(--accent-primary) 12%, transparent),
+      0 22px 60px -10px color-mix(in oklab, var(--accent-secondary) 65%, black),
+      inset 0 1px 2px oklch(1 0 0 / 0.4);
+    transition: transform 0.6s ease-out, box-shadow 0.3s ease, border-color 0.3s ease;
+    transition-timing-function: var(--spring-easing);
+
+    &:hover:not(:disabled) {
+      scale: 1.1;
+      border-color: var(--accent-primary);
+      box-shadow:
+        0 0 0 14px color-mix(in oklab, var(--accent-primary) 22%, transparent),
+        0 28px 80px -8px color-mix(in oklab, var(--accent-primary) 80%, black),
+        inset 0 1px 3px oklch(1 0 0 / 0.6);
+    }
+
+    &:active:not(:disabled) {
+      scale: 0.94;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: background-color 0.2s ease;
+      &:hover:not(:disabled) {
+        scale: 1;
+      }
+    }
+  }
+
+  .btn-spark-icon {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    color: var(--accent-primary);
+    fill: var(--accent-primary);
+    transition: transform 0.5s var(--spring-easing);
+  }
+
+  .quantum-roll-btn:hover:not(:disabled) .btn-spark-icon {
+    scale: 1.2;
+  }
+
+  /* ==========================================================================
+     PURE VISUAL SURPRISE SPECTACLE STAGE (Zero Text Clutter)
+     ========================================================================== */
+  .spectacle-stage {
+    position: relative;
+    inline-size: 100%;
+    min-block-size: 460px;
+    display: grid;
+    place-items: center;
+    perspective: 1200px;
+    isolation: isolate;
+  }
+
+  .spectacle-stage[hidden] {
+    display: none;
+  }
+
+  .anamorphic-flare {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: -25%;
+    inline-size: 150%;
+    block-size: 6px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent-tertiary),
+      white,
+      var(--accent-primary),
+      transparent
+    );
+    box-shadow:
+      0 0 40px 10px var(--accent-tertiary),
+      0 0 90px 25px var(--accent-primary);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .spectacle-stage.flare-active .anamorphic-flare {
+    animation: flare-sweep 0.7s ease-out forwards;
+  }
+
+  @keyframes flare-sweep {
+    0% { opacity: 0; scale: 0.1 1; }
+    40% { opacity: 1; scale: 1.15 3; }
+    100% { opacity: 0; scale: 1.5 0.2; }
+  }
+
+  .shockwave-ring {
+    position: absolute;
+    inline-size: 180px;
+    block-size: 180px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-primary);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 18;
+  }
+
+  .spectacle-stage.flare-active .shockwave-ring {
+    animation: ring-boom 0.75s ease-out forwards;
+  }
+
+  @keyframes ring-boom {
+    0% { scale: 0.3; opacity: 1; }
+    100% { scale: 4.2; opacity: 0; }
+  }
+
+  .poster-vortex-track {
+    position: relative;
+    inline-size: 100%;
+    block-size: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-style: preserve-3d;
+  }
+
+  .flying-poster {
+    position: absolute;
+    inline-size: clamp(150px, 22vw, 210px);
+    aspect-ratio: 2 / 3;
+    border-radius: 1rem;
+    object-fit: cover;
+    box-shadow: 0 22px 50px oklch(0 0 0 / 0.85);
+    border: 2px solid oklch(1 0 0 / 0.28);
+    transition: transform 0.16s linear, opacity 0.16s linear, filter 0.16s linear;
+    will-change: transform, opacity;
+  }
+
+  /* Spectacle Mode 2: 3D Holographic Tarot Cards */
+  .tarot-deck-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.6rem, 2.2vw, 1.4rem);
+    inline-size: 100%;
+    block-size: 100%;
+    perspective: 1200px;
+  }
+
+  .tarot-fate-card {
+    position: relative;
+    inline-size: clamp(95px, 16vw, 160px);
+    aspect-ratio: 2 / 3;
+    border-radius: 1rem;
+    transform-style: preserve-3d;
+    transition: transform 0.55s var(--spring-easing), box-shadow 0.4s ease, opacity 0.35s ease;
+    box-shadow: 0 20px 45px oklch(0 0 0 / 0.75);
+  }
+
+  .tarot-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem;
+    backface-visibility: hidden;
+    overflow: hidden;
+  }
+
+  .tarot-back {
+    background:
+      radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--accent-primary) 35%, transparent), transparent 65%),
+      repeating-conic-gradient(
+        from 0deg,
+        oklch(0.19 0.04 280) 0deg 15deg,
+        oklch(0.13 0.02 270) 15deg 30deg
+      );
+    border: 2px solid color-mix(in oklab, var(--accent-primary) 75%, white);
+    display: grid;
+    place-items: center;
+  }
+
+  .tarot-back::after {
+    content: "✦";
+    font-size: 2.5rem;
+    color: var(--accent-primary);
+    filter: drop-shadow(0 0 14px var(--accent-primary));
+  }
+
+  .tarot-front {
+    transform: rotateY(180deg);
+    border: 2px solid var(--accent-primary);
+  }
+
+  .tarot-front img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .tarot-fate-card.Chosen-Card {
+    transform: translateY(-16px) scale(1.32) rotateY(180deg) !important;
+    z-index: 15;
+    box-shadow:
+      0 0 60px color-mix(in oklab, var(--accent-primary) 85%, transparent),
+      0 30px 70px oklch(0 0 0 / 0.9);
+  }
+
+  .tarot-fate-card.Dimmed-Card {
+    opacity: 0.12;
+    transform: translateY(30px) scale(0.75);
+    filter: blur(4px);
+  }
+
+  /* Spectacle Mode 3: Quantum Rift Reality Fracture */
+  .rift-chamber {
+    position: relative;
+    inline-size: 100%;
+    block-size: 100%;
+    display: grid;
+    place-items: center;
+  }
+
+  .rift-portal-core {
+    position: relative;
+    inline-size: clamp(180px, 26vw, 240px);
+    aspect-ratio: 2 / 3;
+    border-radius: 1.2rem;
+    overflow: hidden;
+    border: 2px solid var(--accent-tertiary);
+    box-shadow:
+      -12px 0 35px color-mix(in oklab, var(--accent-secondary) 80%, transparent),
+      12px 0 35px color-mix(in oklab, var(--accent-tertiary) 80%, transparent),
+      0 0 70px color-mix(in oklab, var(--accent-primary) 60%, transparent);
+    animation: rift-jitter 0.12s infinite alternate;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  .rift-portal-core img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    filter: contrast(1.25) saturate(1.35);
+  }
+
+  .rift-ring-wave {
+    position: absolute;
+    inline-size: 260px;
+    block-size: 260px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-tertiary);
+    opacity: 0;
+    animation: shockwave-pulse 0.8s ease-out infinite;
+    pointer-events: none;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  @keyframes rift-jitter {
+    0% { transform: translate(-4px, 2px) skewX(2deg) scale(0.98); }
+    50% { transform: translate(4px, -2px) skewX(-2deg) scale(1.04); }
+    100% { transform: translate(-2px, -1px) skewX(1deg) scale(1.01); }
+  }
+
+  @keyframes shockwave-pulse {
+    0% { scale: 0.4; opacity: 0.95; }
+    100% { scale: 2.8; opacity: 0; }
+  }
+
+  /* ==========================================================================
+     THE REVEALED MOVIE ARTIFACT CARD
+     (modern-web-guidance: card, animate-element-entry-exit, physics-based-easing)
+     ========================================================================== */
+  .movie-artifact-wrapper {
+    inline-size: 100%;
+    max-inline-size: 920px;
+    container-type: inline-size;
+    perspective: 1400px;
+
+    display: block;
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    transition:
+      display 0.55s,
+      opacity 0.55s ease-out,
+      translate 0.65s ease-out,
+      scale 0.65s ease-out;
+    transition-timing-function: var(--spring-easing);
+    transition-behavior: allow-discrete;
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 36px;
+      scale: 0.9;
+    }
+
+    &:where([hidden], [data-closing]) {
+      opacity: 0;
+      translate: 0 24px;
+      scale: 0.94;
+    }
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      translate: none;
+      scale: none;
+      transition-duration: 0.15s;
+
+      @starting-style {
+        translate: none;
+        scale: none;
+      }
+
+      &:where([hidden], [data-closing]) {
+        translate: none;
+        scale: none;
+      }
+    }
+  }
+
+  .movie-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: clamp(1.25rem, 3cqi, 2.25rem);
+    border-radius: 1.75rem;
+    background:
+      linear-gradient(
+        145deg var(--in-oklch),
+        oklch(0.18 0.035 270 / 0.9),
+        oklch(0.12 0.02 270 / 0.95)
+      );
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 42%, var(--border-subtle));
+    box-shadow:
+      0 28px 80px -15px oklch(0 0 0 / 0.85),
+      0 0 45px -12px color-mix(in oklab, var(--accent-primary) 32%, transparent),
+      inset 0 1px 0 oklch(1 0 0 / 0.15);
+    backdrop-filter: blur(22px);
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease-out, border-color 0.3s ease;
+    overflow: hidden;
+  }
+
+  .movie-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at var(--card-mouse-x, 50%) var(--card-mouse-y, 30%),
+      oklch(1 0 0 / 0.13) 0%,
+      color-mix(in oklab, var(--accent-primary) 10%, transparent) 32%,
+      transparent 65%
+    );
+    mix-blend-mode: screen;
+    z-index: 2;
+  }
+
+  @container (min-width: 640px) {
+    .movie-card:has(> .movie-poster) {
+      grid-template-columns: minmax(220px, 290px) 1fr;
+      grid-template-areas:
+        "poster header"
+        "poster content"
+        "poster footer";
+      align-items: start;
+      column-gap: 2.2rem;
+      row-gap: 1.15rem;
+    }
+
+    .movie-card > .movie-poster {
+      grid-area: poster;
+    }
+
+    .movie-card > header {
+      grid-area: header;
+    }
+
+    .movie-card > .movie-body {
+      grid-area: content;
+    }
+
+    .movie-card > footer {
+      grid-area: footer;
+    }
+  }
+
+  .movie-poster {
+    inline-size: 100%;
+    max-inline-size: 290px;
+    margin-inline: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 1.15rem;
+    border: 1px solid oklch(1 0 0 / 0.2);
+    box-shadow:
+      0 20px 45px -10px oklch(0 0 0 / 0.85),
+      0 0 25px color-mix(in oklab, var(--accent-primary) 22%, transparent);
+    background: oklch(0.15 0.02 270);
+    view-transition-name: selected-movie-poster;
+  }
+
+  .movie-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .movie-title {
+    font-size: clamp(1.6rem, 1.2rem + 2vw, 2.45rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    width: fit-content;
+    view-transition-name: selected-movie-title;
+  }
+
+  .movie-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--accent-primary);
+    }
+  }
+
+  .movie-original-title {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .movie-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .meta-ribbon {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.32rem 0.75rem;
+    border-radius: 0.55rem;
+    background: oklch(0.22 0.03 270 / 0.8);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-primary);
+  }
+
+  .imdb-score-chip {
+    background: color-mix(in oklab, var(--accent-primary) 20%, oklch(0.18 0.03 75));
+    border-color: color-mix(in oklab, var(--accent-primary) 55%, transparent);
+    color: var(--accent-primary);
+    font-weight: 700;
+  }
+
+  .genre-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .genre-pill {
+    padding: 0.28rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: oklch(0.24 0.04 270 / 0.65);
+    border: 1px solid oklch(0.9 0.02 270 / 0.14);
+    color: var(--text-secondary);
+  }
+
+  .movie-plot {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .credits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.85rem;
+    background: oklch(0.14 0.02 270 / 0.55);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .credit-block dt {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-block-end: 0.15rem;
+  }
+
+  .credit-block dd {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .movie-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding-block-start: 0.4rem;
+    position: relative;
+    z-index: 3;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-block-size: 2.9rem;
+    padding-inline: 1.4rem;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid var(--border-subtle);
+    background: oklch(0.22 0.03 270 / 0.85);
+    color: var(--text-primary);
+    transition: transform 0.25s var(--spring-easing), background-color 0.2s ease, border-color 0.2s ease;
+
+    &:hover:not(:disabled) {
+      scale: 1.04;
+      border-color: var(--accent-primary);
+      background: oklch(0.26 0.04 270);
+    }
+
+    &:active:not(:disabled) {
+      scale: 0.96;
+    }
+  }
+
+  .action-btn.primary-reroll {
+    background: var(--accent-primary);
+    color: var(--bg-void);
+    border-color: transparent;
+    box-shadow: 0 10px 28px -6px color-mix(in oklab, var(--accent-primary) 65%, transparent);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in oklab, var(--accent-primary) 88%, white);
+    }
+  }
+
+  .action-btn.imdb-link {
+    border-color: color-mix(in oklab, var(--accent-primary) 45%, transparent);
+    color: var(--accent-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
+}
