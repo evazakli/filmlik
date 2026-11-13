@@ -3,7 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Film Seç</title>
+  <title>Film Seç ✦ Rastgele IMDb 7.0+ Film Önerisi</title>
+  <meta name="description" content="Bu akşam ne izleyeceğine karar veremedin mi? Tek tıkla 4.682 seçkin IMDb 7.0+ film arasından şansına düşen filmi keşfet!">
+  <meta name="theme-color" content="#0d0e17">
+
+  <!-- Sekme İkonları (Favicon & Apple Touch Icon) -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+  <!-- WhatsApp, Telegram, Discord, Twitter/X Paylaşım Önizleme Kartı (Open Graph) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:site_name" content="Film Seç">
+  <meta property="og:title" content="🎬 Film Seç — Şansına Düşen IMDb 7.0+ Filmi Keşfet">
+  <meta property="og:description" content="Tek tıkla 4.682 seçkin IMDb 7.0+ film arasından tamamen rastgele, yüksek puanlı bir film önerisi al!">
+  <meta property="og:image" content="https://evazakli.github.io/film-oneri/og-preview.jpg">
+  <meta property="og:image" content="og-preview.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Film Seç — IMDb 7.0+ Rastgele Film Keşfi">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="🎬 Film Seç — Şansına Düşen IMDb 7.0+ Filmi Keşfet">
+  <meta name="twitter:description" content="Tek tıkla 4.682 seçkin IMDb 7.0+ film arasından tamamen rastgele, yüksek puanlı bir film önerisi al!">
+  <meta name="twitter:image" content="https://evazakli.github.io/film-oneri/og-preview.jpg">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
@@ -17,8 +43,8 @@
   <main id="main-content" class="main-stage">
     <h1 id="main-title" tabindex="-1" class="visually-hidden">Rastgele Film Seçici</h1>
 
-    <!-- İSTEĞE BAĞLI TÜR SEÇİCİ (Her zaman erişilebilir, ultra sade) -->
-    <div class="genre-bar" id="genre-bar">
+    <!-- İSTEĞE BAĞLI TÜR SEÇİCİ -->
+    <search class="genre-bar" id="genre-bar">
       <label for="genre-select" class="visually-hidden">Film Türü</label>
       <select id="genre-select" name="genre" class="genre-select">
         <option value="all" selected>Tüm Türler</option>
@@ -45,7 +71,7 @@
         <option value="War">Savaş</option>
         <option value="Western">Western</option>
       </select>
-    </div>
+    </search>
 
     <!-- SADECE SEÇ BUTONU (İlk ekranda merkezde) -->
     <div class="portal-trigger-zone" id="portal-trigger-zone">

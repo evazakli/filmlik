@@ -378,6 +378,9 @@ function populateMovieCard(movie) {
   poster.src = movie.img;
   poster.alt = `${movie.t} (${movie.y || ''}) film afişi`;
 
+  const scoreStr = movie.r ? movie.r.toFixed(1) : '';
+  document.title = `🎬 ${movie.t}${movie.y ? ` (${movie.y})` : ''}${scoreStr ? ` ★ ${scoreStr}` : ''} | Film Seç`;
+
   const titleLink = document.getElementById('movie-title-link');
   const imdbUrl = `https://www.imdb.com/title/${movie.id}/`;
   titleLink.textContent = movie.t;
@@ -606,11 +609,11 @@ async function triggerRandomMovieRoll() {
   if (document.startViewTransition && !reducedMotion) {
     const vt = document.startViewTransition(() => updateDOM());
     vt.finished.finally(() => {
-      document.getElementById('movie-title-heading')?.focus({ preventScroll: true });
+      document.getElementById('movie-title-heading')?.focus();
     });
   } else {
     updateDOM();
-    document.getElementById('movie-title-heading')?.focus({ preventScroll: true });
+    document.getElementById('movie-title-heading')?.focus();
   }
 
   rollBtn.disabled = false;

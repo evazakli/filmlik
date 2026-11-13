@@ -6,6 +6,8 @@
 ![IMDb Dataset](https://img.shields.io/badge/IMDb%207.0%2B-4.682%20Film-F5C518?style=flat-square&logo=imdb&logoColor=black)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Ready-222222?style=flat-square&logo=githubpages&logoColor=white)
 
+![Film Seç Önizleme](og-preview.jpg)
+
 **"Bu akşam ne izlesem?"** sorusunu karmaşık menüler, reklamlar ve algoritma önyargıları olmadan çözen; ultra-minimalist, görsel ve işitsel olarak şaşırtıcı bir sinema keşif uygulaması.
 
 Uygulama açıldığında kullanıcıyı hiçbir metin kalabalığı olmadan yalnızca karanlık bir uzay boşluğu, etkileşimli yıldız alanı ve merkezdeki **"FİLM SEÇ"** butonu karşılar. Butona basıldığı anda devreye giren 3 boyutlu görsel şovların ardından, **IMDb puanı 7.0 ve üzerinde olan 4.682 gerçek film** arasından tamamen rastgele bir yapım sunulur.
@@ -49,13 +51,16 @@ Her seçimde arka plandaki 3D yıldız alanı hiper-hıza (*warp speed*) geçer 
 
 ```text
 film_oneri/
-├── index.html       # Ultra-sade semantik HTML5 sahne ve film kartı yapısı
-├── style.css        # @layer mimarisi, OKLCH renk sistemi, fizik tabanlı yay animasyonları
-├── app.js           # Kriptografik rastgelelik motoru, 3D Canvas, Web Audio API sentezleyici
-├── movies-data.js   # 4.682 adet IMDb 7.0+ filmin çevrimdışı/CORS-uyumlu veri paketi
-├── movies.json      # Ham JSON formatında 4.682 filmlik veri arşivi
-├── .nojekyll        # GitHub Pages statik dosya sunum yapılandırması
-└── README.md        # Proje dokümantasyonu
+├── index.html            # Ultra-sade semantik HTML5 sahne, Open Graph ve film kartı yapısı
+├── style.css             # @layer mimarisi, OKLCH renk sistemi, fizik tabanlı yay animasyonları
+├── app.js                # Kriptografik rastgelelik motoru, 3D Canvas, Web Audio API sentezleyici
+├── movies-data.js        # 4.682 adet IMDb 7.0+ filmin çevrimdışı/CORS-uyumlu veri paketi
+├── favicon.svg           # Vektörel sekme ikonu (Favicon)
+├── favicon.png           # 64x64 sekme ikonu
+├── apple-touch-icon.png  # 180x180 mobil ana ekran ikonu
+├── og-preview.jpg        # 1200x630 WhatsApp / Sosyal Medya bağlantı paylaşım görseli
+├── .nojekyll             # GitHub Pages statik dosya sunum yapılandırması
+└── README.md             # Proje dokümantasyonu
 ```
 
 ---
