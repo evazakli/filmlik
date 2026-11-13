@@ -224,7 +224,8 @@ class VortexCanvasEngine {
   }
 
   initStars() {
-    this.stars = Array.from({ length: 160 }, () => ({
+    const starCount = window.innerWidth < 640 ? 85 : 160;
+    this.stars = Array.from({ length: starCount }, () => ({
       x: (Math.random() - 0.5) * 2000,
       y: (Math.random() - 0.5) * 2000,
       z: Math.random() * 1500 + 50,
@@ -238,7 +239,8 @@ class VortexCanvasEngine {
 
   triggerBurst() {
     if (this.reducedMotion) return;
-    for (let i = 0; i < 95; i++) {
+    const count = window.innerWidth < 640 ? 55 : 95;
+    for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 3 + Math.random() * 13;
       this.burstParticles.push({
@@ -320,6 +322,10 @@ const synth = new CinemaSynth();
 let canvasEngine = null;
 
 function setupPointerInteractions() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    return;
+  }
+
   let bodyRect = document.body.getBoundingClientRect();
   const ro = new ResizeObserver(() => {
     bodyRect = document.body.getBoundingClientRect();
@@ -419,7 +425,7 @@ function populateMovieCard(movie) {
   document.getElementById('imdb-external-btn').href = imdbUrl;
 }
 
-// Pure Visual Spectacle 1: 3D Poster Vortex Tunnel
+// Pure Visual Spectacle 1: 3D Poster Vortex Tunnel (Mobile-Responsive Spread)
 async function runVortexSpectacle(visualBox, chosenMovie, decoys) {
   visualBox.innerHTML = '';
   const posterNodes = decoys.slice(0, 9).map((m) => {
@@ -431,17 +437,21 @@ async function runVortexSpectacle(visualBox, chosenMovie, decoys) {
     return img;
   });
 
+  const vw = window.innerWidth;
+  const spreadX = Math.min(95, Math.max(32, vw * 0.11));
+  const spreadZ = Math.min(130, Math.max(60, vw * 0.15));
+
   const totalSteps = 14;
   for (let step = 0; step < totalSteps; step++) {
     synth.playTick(step / totalSteps);
     posterNodes.forEach((img, idx) => {
       const offset = ((idx + step) % posterNodes.length) - 4;
-      const z = offset * 130;
-      const x = offset * 95;
-      const rotY = offset * -16;
-      const scale = Math.max(0.45, 1 - Math.abs(offset) * 0.14);
-      img.style.transform = `translate3d(${x}px, 0px, ${z}px) rotateY(${rotY}deg) scale(${scale})`;
-      img.style.opacity = String(Math.max(0.12, 1 - Math.abs(offset) * 0.22));
+      const z = offset * spreadZ;
+      const x = offset * spreadX;
+      const rotY = offset * -14;
+      const scale = Math.max(0.48, 1 - Math.abs(offset) * 0.13);
+      img.style.transform = `translate3d(${x.toFixed(1)}px, 0px, ${z.toFixed(1)}px) rotateY(${rotY}deg) scale(${scale})`;
+      img.style.opacity = String(Math.max(0.14, 1 - Math.abs(offset) * 0.22));
     });
     await new Promise((r) => setTimeout(r, 70 + step * 7));
   }
@@ -449,7 +459,7 @@ async function runVortexSpectacle(visualBox, chosenMovie, decoys) {
   posterNodes.forEach((img, idx) => {
     if (idx === 4) {
       img.src = chosenMovie.img;
-      img.style.transform = 'translate3d(0px, 0px, 160px) rotateY(0deg) scale(1.25)';
+      img.style.transform = 'translate3d(0px, 0px, 120px) rotateY(0deg) scale(1.22)';
       img.style.opacity = '1';
       img.style.borderColor = 'var(--accent-primary)';
     } else {
@@ -482,12 +492,13 @@ async function runTarotSpectacle(visualBox, chosenMovie, decoys) {
     cards.push(card);
   }
 
+  const waveAmp = window.innerWidth < 640 ? 18 : 30;
   for (let step = 0; step < 12; step++) {
     synth.playTick(step / 12);
     cards.forEach((c, idx) => {
-      const wave = Math.sin((step + idx) * 1.35) * 32;
-      const rotZ = (idx - 2) * 6 + Math.cos(step + idx) * 9;
-      c.style.transform = `translateY(${wave}px) rotateZ(${rotZ}deg) rotateY(${step % 2 === 0 ? 18 : -18}deg)`;
+      const wave = Math.sin((step + idx) * 1.35) * waveAmp;
+      const rotZ = (idx - 2) * 5 + Math.cos(step + idx) * 8;
+      c.style.transform = `translateY(${wave.toFixed(1)}px) rotateZ(${rotZ.toFixed(1)}deg) rotateY(${step % 2 === 0 ? 16 : -16}deg)`;
     });
     await new Promise((r) => setTimeout(r, 90));
   }
@@ -542,6 +553,11 @@ async function triggerRandomMovieRoll() {
   if (state.isRolling || pool.length === 0) return;
   state.isRolling = true;
 
+  // Subtle mobile haptic feedback on tap
+  try {
+    navigator.vibrate?.(18);
+  } catch {}
+
   const portalZone = document.getElementById('portal-trigger-zone');
   const rollBtn = document.getElementById('roll-movie-btn');
   const rerollBtn = document.getElementById('reroll-btn');
@@ -562,6 +578,10 @@ async function triggerRandomMovieRoll() {
   const artifactWrapper = document.getElementById('movie-artifact-wrapper');
   const spectacleStage = document.getElementById('spectacle-stage');
   const visualBox = document.getElementById('spectacle-visual-box');
+
+  if (window.scrollY > 40) {
+    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+  }
 
   if (!reducedMotion) {
     if (!artifactWrapper.hidden) {
@@ -590,6 +610,9 @@ async function triggerRandomMovieRoll() {
     applyMovieTheme(chosenMovie);
     spectacleStage.classList.add('flare-active');
     synth.playRevelationChord();
+    try {
+      navigator.vibrate?.([22, 45, 35]);
+    } catch {}
     if (canvasEngine) {
       canvasEngine.setWarp(1);
       canvasEngine.triggerBurst();
@@ -609,11 +632,11 @@ async function triggerRandomMovieRoll() {
   if (document.startViewTransition && !reducedMotion) {
     const vt = document.startViewTransition(() => updateDOM());
     vt.finished.finally(() => {
-      document.getElementById('movie-title-heading')?.focus();
+      document.getElementById('movie-title-heading')?.focus({ preventScroll: true });
     });
   } else {
     updateDOM();
-    document.getElementById('movie-title-heading')?.focus();
+    document.getElementById('movie-title-heading')?.focus({ preventScroll: true });
   }
 
   rollBtn.disabled = false;

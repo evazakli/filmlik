@@ -15,7 +15,7 @@
 
 @layer reset {
   html, body, div, span, main, section, article, header, footer,
-  h1, h2, p, ul, li, dl, dt, dd, button, a, img, svg, canvas {
+  h1, h2, p, ul, li, dl, dt, dd, button, a, img, svg, canvas, search, select {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -28,6 +28,11 @@
   button, select {
     font: inherit;
     color: inherit;
+  }
+
+  button, select, a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   img, svg, canvas {
@@ -91,14 +96,17 @@
     line-height: 1.5;
     text-align: start;
     overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     min-block-size: 100dvh;
     display: grid;
-    place-items: center;
+    place-items: safe center;
     position: relative;
     isolation: isolate;
+    overflow-x: clip;
     background:
       radial-gradient(circle at 20% 20%, color-mix(in oklab, var(--accent-secondary) 14%, transparent) 0%, transparent 50%),
       radial-gradient(circle at 80% 80%, color-mix(in oklab, var(--accent-tertiary) 14%, transparent) 0%, transparent 50%),
@@ -148,7 +156,7 @@
     pointer-events: none;
   }
 
-  /* Interactive Pointer Spotlight Reveal (modern-web-guidance: interactive-content-reveal) */
+  /* Interactive Pointer Spotlight Reveal (desktop fine pointers only) */
   .spotlight-reveal-layer {
     position: fixed;
     inset: 0;
@@ -180,9 +188,11 @@
     }
   }
 
-  body:hover .spotlight-reveal-layer {
-    --inner-size: 160px;
-    --outer-size: 420px;
+  @media (hover: hover) and (pointer: fine) {
+    body:hover .spotlight-reveal-layer {
+      --inner-size: 160px;
+      --outer-size: 420px;
+    }
   }
 
   .cinema-grain {
@@ -196,45 +206,53 @@
     mix-blend-mode: overlay;
   }
 
+  /* Safe-area & dynamic viewport aware stage (modern-web-guidance: responsive-design, css-layout) */
   .main-stage {
     inline-size: 100%;
     max-inline-size: 1060px;
-    padding: clamp(1rem, 3vw, 2.5rem);
+    min-block-size: 100dvh;
+    padding-block-start: max(0.85rem, env(safe-area-inset-top));
+    padding-block-end: max(1.1rem, env(safe-area-inset-bottom));
+    padding-inline-start: max(0.9rem, env(safe-area-inset-left));
+    padding-inline-end: max(0.9rem, env(safe-area-inset-right));
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
+    align-items: safe center;
+    justify-content: safe center;
+    gap: clamp(0.85rem, 2.2dvh, 1.5rem);
   }
 
   /* ==========================================================================
      MINIMALIST GENRE SELECTOR
-     (modern-web-guidance: branded-select-styling, forms)
+     Preserves native OS wheel/sheet picker on mobile (pointer: coarse) while
+     using customizable base-select on desktop (modern-web-guidance: branded-select-styling)
      ========================================================================== */
   .genre-bar {
     position: relative;
     z-index: 25;
+    inline-size: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .genre-select,
-  .genre-select::picker(select) {
-    appearance: base-select;
-  }
-
   .genre-select {
-    min-inline-size: 13.5rem;
-    min-block-size: 3rem;
-    padding-block: 0.6rem;
-    padding-inline: 1.25rem;
+    appearance: none;
+    inline-size: min(100%, 15.5rem);
+    min-block-size: 2.85rem;
+    padding-block: 0.55rem;
+    padding-inline-start: 1.2rem;
+    padding-inline-end: 2.6rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, var(--border-subtle));
-    background-color: oklch(0.16 0.03 270 / 0.88);
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-subtle));
+    background-color: oklch(0.16 0.03 270 / 0.9);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23f5b942' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.05rem;
     color: var(--text-primary);
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
@@ -242,53 +260,80 @@
     box-shadow: 0 10px 30px -8px oklch(0 0 0 / 0.65);
     transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--spring-easing);
 
-    &:hover {
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 22px -4px color-mix(in oklab, var(--accent-primary) 45%, transparent);
+    @media (pointer: coarse) {
+      min-block-size: 3.1rem;
+      font-size: 1rem;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 22px -4px color-mix(in oklab, var(--accent-primary) 45%, transparent);
+      }
     }
   }
 
-  .genre-select::picker(select) {
-    background-color: oklch(0.14 0.025 270);
-    color: var(--text-primary);
-    border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, var(--border-subtle));
-    border-radius: 1rem;
-    padding: 0.45rem;
-    box-shadow: 0 24px 60px oklch(0 0 0 / 0.85);
-  }
+  @media (hover: hover) and (pointer: fine) {
+    @supports (appearance: base-select) {
+      .genre-select,
+      .genre-select::picker(select) {
+        appearance: base-select;
+      }
 
-  .genre-select::picker-icon {
-    color: var(--accent-primary);
+      .genre-select {
+        background-image: none;
+        padding-inline: 1.25rem;
+      }
+
+      .genre-select::picker(select) {
+        background-color: oklch(0.14 0.025 270);
+        color: var(--text-primary);
+        border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, var(--border-subtle));
+        border-radius: 1rem;
+        padding: 0.45rem;
+        box-shadow: 0 24px 60px oklch(0 0 0 / 0.85);
+      }
+
+      .genre-select::picker-icon {
+        color: var(--accent-primary);
+      }
+
+      .genre-select option {
+        padding: 0.55rem 0.85rem;
+        border-radius: 0.6rem;
+        background-color: oklch(0.14 0.025 270);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .genre-select option:hover {
+        background-color: oklch(0.22 0.04 270);
+      }
+
+      .genre-select option::checkmark {
+        color: var(--accent-primary);
+      }
+    }
   }
 
   .genre-select option {
-    padding: 0.55rem 0.85rem;
-    border-radius: 0.6rem;
-    background-color: oklch(0.14 0.025 270);
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .genre-select option:hover {
-    background-color: oklch(0.22 0.04 270);
-  }
-
-  .genre-select option::checkmark {
-    color: var(--accent-primary);
+    background-color: #141624;
+    color: #f4f5f8;
   }
 
   /* ==========================================================================
-     THE SOLE CENTERPIECE BUTTON (Initial State)
+     THE SOLE CENTERPIECE BUTTON (Initial State — Mobile & Desktop)
      ========================================================================== */
   .portal-trigger-zone {
     position: relative;
     display: grid;
     place-items: center;
-    inline-size: 22rem;
-    block-size: 22rem;
+    inline-size: min(78dvw, 20.5rem);
+    block-size: min(78dvw, 20.5rem);
+    margin-block: auto;
   }
 
   .portal-trigger-zone[hidden] {
@@ -297,8 +342,8 @@
 
   .portal-core-glow {
     position: absolute;
-    inline-size: 14rem;
-    block-size: 14rem;
+    inline-size: 68%;
+    block-size: 68%;
     border-radius: 50%;
     background: radial-gradient(
       circle,
@@ -341,12 +386,12 @@
   }
 
   .portal-rings::before {
-    inset: 1.75rem;
+    inset: 1.35rem;
     border: 1px solid color-mix(in oklab, var(--accent-tertiary) 28%, transparent);
   }
 
   .portal-rings::after {
-    inset: -1.5rem;
+    inset: -0.75rem;
     border: 1px solid color-mix(in oklab, var(--accent-secondary) 18%, transparent);
   }
 
@@ -360,10 +405,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.9rem;
-    min-block-size: 5.2rem;
-    padding-block: 1.2rem;
-    padding-inline: 3.2rem;
+    gap: 0.75rem;
+    min-block-size: 4.6rem;
+    padding-block: clamp(1rem, 2.2dvh, 1.2rem);
+    padding-inline: clamp(2rem, 7dvw, 3.2rem);
     border-radius: 999px;
     border: 2px solid color-mix(in oklab, var(--accent-primary) 80%, white);
     background: linear-gradient(
@@ -373,9 +418,10 @@
     );
     color: var(--text-primary);
     font-family: var(--font-display);
-    font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.65rem);
+    font-size: clamp(1.18rem, 1rem + 1.1dvw, 1.65rem);
     font-weight: 800;
     letter-spacing: 0.08em;
+    white-space: nowrap;
     cursor: pointer;
     box-shadow:
       0 0 0 8px color-mix(in oklab, var(--accent-primary) 12%, transparent),
@@ -384,17 +430,19 @@
     transition: transform 0.6s ease-out, box-shadow 0.3s ease, border-color 0.3s ease;
     transition-timing-function: var(--spring-easing);
 
-    &:hover:not(:disabled) {
-      scale: 1.1;
-      border-color: var(--accent-primary);
-      box-shadow:
-        0 0 0 14px color-mix(in oklab, var(--accent-primary) 22%, transparent),
-        0 28px 80px -8px color-mix(in oklab, var(--accent-primary) 80%, black),
-        inset 0 1px 3px oklch(1 0 0 / 0.6);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled) {
+        scale: 1.1;
+        border-color: var(--accent-primary);
+        box-shadow:
+          0 0 0 14px color-mix(in oklab, var(--accent-primary) 22%, transparent),
+          0 28px 80px -8px color-mix(in oklab, var(--accent-primary) 80%, black),
+          inset 0 1px 3px oklch(1 0 0 / 0.6);
+      }
     }
 
     &:active:not(:disabled) {
-      scale: 0.94;
+      scale: 0.93;
     }
 
     &:disabled {
@@ -411,28 +459,27 @@
   }
 
   .btn-spark-icon {
-    inline-size: 1.5rem;
-    block-size: 1.5rem;
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    flex-shrink: 0;
     color: var(--accent-primary);
     fill: var(--accent-primary);
     transition: transform 0.5s var(--spring-easing);
   }
 
-  .quantum-roll-btn:hover:not(:disabled) .btn-spark-icon {
-    scale: 1.2;
-  }
-
   /* ==========================================================================
-     PURE VISUAL SURPRISE SPECTACLE STAGE (Zero Text Clutter)
+     PURE VISUAL SURPRISE SPECTACLE STAGE (Mobile-Safe 3D Bounds)
      ========================================================================== */
   .spectacle-stage {
     position: relative;
     inline-size: 100%;
-    min-block-size: 460px;
+    min-block-size: clamp(270px, 52dvh, 450px);
+    margin-block: auto;
     display: grid;
     place-items: center;
-    perspective: 1200px;
+    perspective: 1100px;
     isolation: isolate;
+    overflow: visible;
   }
 
   .spectacle-stage[hidden] {
@@ -442,8 +489,8 @@
   .anamorphic-flare {
     position: absolute;
     inset-block-start: 50%;
-    inset-inline-start: -25%;
-    inline-size: 150%;
+    inset-inline-start: -15%;
+    inline-size: 130%;
     block-size: 6px;
     background: linear-gradient(
       90deg,
@@ -473,8 +520,8 @@
 
   .shockwave-ring {
     position: absolute;
-    inline-size: 180px;
-    block-size: 180px;
+    inline-size: min(46dvw, 180px);
+    block-size: min(46dvw, 180px);
     border-radius: 50%;
     border: 3px solid var(--accent-primary);
     opacity: 0;
@@ -488,13 +535,13 @@
 
   @keyframes ring-boom {
     0% { scale: 0.3; opacity: 1; }
-    100% { scale: 4.2; opacity: 0; }
+    100% { scale: 3.6; opacity: 0; }
   }
 
   .poster-vortex-track {
     position: relative;
     inline-size: 100%;
-    block-size: 380px;
+    block-size: clamp(250px, 46dvh, 380px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -503,9 +550,9 @@
 
   .flying-poster {
     position: absolute;
-    inline-size: clamp(150px, 22vw, 210px);
+    inline-size: clamp(118px, 32dvw, 205px);
     aspect-ratio: 2 / 3;
-    border-radius: 1rem;
+    border-radius: 0.9rem;
     object-fit: cover;
     box-shadow: 0 22px 50px oklch(0 0 0 / 0.85);
     border: 2px solid oklch(1 0 0 / 0.28);
@@ -518,17 +565,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(0.6rem, 2.2vw, 1.4rem);
+    gap: clamp(0.35rem, 1.8dvw, 1.35rem);
     inline-size: 100%;
     block-size: 100%;
-    perspective: 1200px;
+    perspective: 1100px;
   }
 
   .tarot-fate-card {
     position: relative;
-    inline-size: clamp(95px, 16vw, 160px);
+    inline-size: clamp(58px, 16.5dvw, 155px);
     aspect-ratio: 2 / 3;
-    border-radius: 1rem;
+    border-radius: 0.8rem;
     transform-style: preserve-3d;
     transition: transform 0.55s var(--spring-easing), box-shadow 0.4s ease, opacity 0.35s ease;
     box-shadow: 0 20px 45px oklch(0 0 0 / 0.75);
@@ -537,7 +584,7 @@
   .tarot-face {
     position: absolute;
     inset: 0;
-    border-radius: 1rem;
+    border-radius: 0.8rem;
     backface-visibility: hidden;
     overflow: hidden;
   }
@@ -557,7 +604,7 @@
 
   .tarot-back::after {
     content: "✦";
-    font-size: 2.5rem;
+    font-size: clamp(1.35rem, 4dvw, 2.5rem);
     color: var(--accent-primary);
     filter: drop-shadow(0 0 14px var(--accent-primary));
   }
@@ -574,7 +621,7 @@
   }
 
   .tarot-fate-card.Chosen-Card {
-    transform: translateY(-16px) scale(1.32) rotateY(180deg) !important;
+    transform: translateY(-12px) scale(1.42) rotateY(180deg) !important;
     z-index: 15;
     box-shadow:
       0 0 60px color-mix(in oklab, var(--accent-primary) 85%, transparent),
@@ -583,7 +630,7 @@
 
   .tarot-fate-card.Dimmed-Card {
     opacity: 0.12;
-    transform: translateY(30px) scale(0.75);
+    transform: translateY(24px) scale(0.75);
     filter: blur(4px);
   }
 
@@ -598,9 +645,9 @@
 
   .rift-portal-core {
     position: relative;
-    inline-size: clamp(180px, 26vw, 240px);
+    inline-size: clamp(145px, 42dvw, 235px);
     aspect-ratio: 2 / 3;
-    border-radius: 1.2rem;
+    border-radius: 1.1rem;
     overflow: hidden;
     border: 2px solid var(--accent-tertiary);
     box-shadow:
@@ -623,8 +670,8 @@
 
   .rift-ring-wave {
     position: absolute;
-    inline-size: 260px;
-    block-size: 260px;
+    inline-size: min(65dvw, 260px);
+    block-size: min(65dvw, 260px);
     border-radius: 50%;
     border: 2px solid var(--accent-tertiary);
     opacity: 0;
@@ -644,18 +691,19 @@
 
   @keyframes shockwave-pulse {
     0% { scale: 0.4; opacity: 0.95; }
-    100% { scale: 2.8; opacity: 0; }
+    100% { scale: 2.4; opacity: 0; }
   }
 
   /* ==========================================================================
      THE REVEALED MOVIE ARTIFACT CARD
-     (modern-web-guidance: card, animate-element-entry-exit, physics-based-easing)
+     (modern-web-guidance: card, responsive-design, css-layout, fluid-scaling)
      ========================================================================== */
   .movie-artifact-wrapper {
     inline-size: 100%;
     max-inline-size: 920px;
     container-type: inline-size;
     perspective: 1400px;
+    margin-block: auto;
 
     display: block;
     opacity: 1;
@@ -706,14 +754,14 @@
     position: relative;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1.5rem;
-    padding: clamp(1.25rem, 3cqi, 2.25rem);
-    border-radius: 1.75rem;
+    gap: 0.95rem;
+    padding: clamp(1.05rem, 3.5dvw, 2.25rem);
+    border-radius: clamp(1.25rem, 3.5dvw, 1.75rem);
     background:
       linear-gradient(
         145deg var(--in-oklch),
-        oklch(0.18 0.035 270 / 0.9),
-        oklch(0.12 0.02 270 / 0.95)
+        oklch(0.18 0.035 270 / 0.92),
+        oklch(0.12 0.02 270 / 0.96)
       );
     border: 1px solid color-mix(in oklab, var(--accent-primary) 42%, var(--border-subtle));
     box-shadow:
@@ -724,6 +772,10 @@
     transform-style: preserve-3d;
     transition: transform 0.2s ease-out, border-color 0.3s ease;
     overflow: hidden;
+
+    @supports (padding: 1cqi) {
+      padding: clamp(1.05rem, 3.2cqi, 2.25rem);
+    }
   }
 
   .movie-card::before {
@@ -732,8 +784,8 @@
     inset: 0;
     pointer-events: none;
     background: radial-gradient(
-      circle at var(--card-mouse-x, 50%) var(--card-mouse-y, 30%),
-      oklch(1 0 0 / 0.13) 0%,
+      circle at var(--card-mouse-x, 50%) var(--card-mouse-y, 25%),
+      oklch(1 0 0 / 0.12) 0%,
       color-mix(in oklab, var(--accent-primary) 10%, transparent) 32%,
       transparent 65%
     );
@@ -741,46 +793,17 @@
     z-index: 2;
   }
 
-  @container (min-width: 640px) {
-    .movie-card:has(> .movie-poster) {
-      grid-template-columns: minmax(220px, 290px) 1fr;
-      grid-template-areas:
-        "poster header"
-        "poster content"
-        "poster footer";
-      align-items: start;
-      column-gap: 2.2rem;
-      row-gap: 1.15rem;
-    }
-
-    .movie-card > .movie-poster {
-      grid-area: poster;
-    }
-
-    .movie-card > header {
-      grid-area: header;
-    }
-
-    .movie-card > .movie-body {
-      grid-area: content;
-    }
-
-    .movie-card > footer {
-      grid-area: footer;
-    }
-  }
-
+  /* Mobile-first compact poster so entire movie card fits on 1 phone screen */
   .movie-poster {
-    inline-size: 100%;
-    max-inline-size: 290px;
+    inline-size: clamp(132px, 38dvw, 185px);
     margin-inline: auto;
     aspect-ratio: 2 / 3;
     object-fit: cover;
-    border-radius: 1.15rem;
-    border: 1px solid oklch(1 0 0 / 0.2);
+    border-radius: 1rem;
+    border: 1px solid oklch(1 0 0 / 0.22);
     box-shadow:
-      0 20px 45px -10px oklch(0 0 0 / 0.85),
-      0 0 25px color-mix(in oklab, var(--accent-primary) 22%, transparent);
+      0 16px 38px -10px oklch(0 0 0 / 0.85),
+      0 0 22px color-mix(in oklab, var(--accent-primary) 24%, transparent);
     background: oklch(0.15 0.02 270);
     view-transition-name: selected-movie-poster;
   }
@@ -788,16 +811,23 @@
   .movie-header {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
   }
 
+  /* Fluid typography with <= 2.5x ratio and cqi progressive enhancement (modern-web-guidance: fluid-scaling) */
   .movie-title {
-    font-size: clamp(1.6rem, 1.2rem + 2vw, 2.45rem);
+    font-size: clamp(1.35rem, 1.1rem + 1.5dvw, 2.35rem);
     font-weight: 800;
     letter-spacing: -0.025em;
     color: var(--text-primary);
     width: fit-content;
     view-transition-name: selected-movie-title;
+
+    @supports (font-size: 1cqi) {
+      font-size: clamp(1.35rem, 1.05rem + 2.2cqi, 2.35rem);
+    }
   }
 
   .movie-title a {
@@ -811,7 +841,7 @@
   }
 
   .movie-original-title {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     color: var(--text-muted);
     font-style: italic;
   }
@@ -819,26 +849,29 @@
   .movie-body {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.8rem;
   }
 
+  /* Wrapped rows of compact items with flex-wrap: balance (modern-web-guidance: css-layout) */
   .meta-ribbon {
     display: flex;
     flex-wrap: wrap;
+    flex-wrap: balance;
     align-items: center;
-    gap: 0.55rem;
+    justify-content: center;
+    gap: 0.45rem;
   }
 
   .meta-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.32rem 0.75rem;
+    gap: 0.3rem;
+    padding: 0.28rem 0.68rem;
     border-radius: 0.55rem;
-    background: oklch(0.22 0.03 270 / 0.8);
+    background: oklch(0.22 0.03 270 / 0.82);
     border: 1px solid var(--border-subtle);
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-primary);
   }
 
@@ -852,13 +885,15 @@
   .genre-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
+    flex-wrap: balance;
+    justify-content: center;
+    gap: 0.4rem;
   }
 
   .genre-pill {
-    padding: 0.28rem 0.75rem;
+    padding: 0.24rem 0.68rem;
     border-radius: 999px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
     background: oklch(0.24 0.04 270 / 0.65);
     border: 1px solid oklch(0.9 0.02 270 / 0.14);
@@ -866,58 +901,65 @@
   }
 
   .movie-plot {
-    font-size: 0.98rem;
-    line-height: 1.6;
+    font-size: clamp(0.9rem, 0.86rem + 0.25dvw, 1rem);
+    line-height: 1.55;
     color: var(--text-secondary);
+    text-align: start;
   }
 
+  /* Intrinsic 2-column grid that stays side-by-side even on 360px phones (modern-web-guidance: css-layout) */
   .credits-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
     border-radius: 0.85rem;
     background: oklch(0.14 0.02 270 / 0.55);
     border: 1px solid var(--border-subtle);
+    text-align: start;
   }
 
   .credit-block dt {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
-    margin-block-end: 0.15rem;
+    margin-block-end: 0.12rem;
   }
 
   .credit-block dd {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     font-weight: 600;
     color: var(--text-primary);
+    line-height: 1.35;
   }
 
+  /* Thumb-zone action footer on mobile */
   .movie-footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
-    padding-block-start: 0.4rem;
+    gap: 0.65rem;
+    padding-block-start: 0.25rem;
     position: relative;
     z-index: 3;
   }
 
   .action-btn {
+    flex: 1 1 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.55rem;
-    min-block-size: 2.9rem;
-    padding-inline: 1.4rem;
+    gap: 0.5rem;
+    min-block-size: 3rem;
+    padding-inline: 1.25rem;
     border-radius: 999px;
     font-family: var(--font-display);
     font-size: 0.92rem;
     font-weight: 800;
     letter-spacing: 0.04em;
+    white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
     border: 1px solid var(--border-subtle);
@@ -925,10 +967,17 @@
     color: var(--text-primary);
     transition: transform 0.25s var(--spring-easing), background-color 0.2s ease, border-color 0.2s ease;
 
-    &:hover:not(:disabled) {
-      scale: 1.04;
-      border-color: var(--accent-primary);
-      background: oklch(0.26 0.04 270);
+    @media (pointer: coarse) {
+      min-block-size: 3.25rem;
+      font-size: 0.96rem;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled) {
+        scale: 1.04;
+        border-color: var(--accent-primary);
+        background: oklch(0.26 0.04 270);
+      }
     }
 
     &:active:not(:disabled) {
@@ -937,19 +986,116 @@
   }
 
   .action-btn.primary-reroll {
+    flex: 2 1 165px;
     background: var(--accent-primary);
     color: var(--bg-void);
     border-color: transparent;
     box-shadow: 0 10px 28px -6px color-mix(in oklab, var(--accent-primary) 65%, transparent);
 
-    &:hover:not(:disabled) {
-      background: color-mix(in oklab, var(--accent-primary) 88%, white);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled) {
+        background: color-mix(in oklab, var(--accent-primary) 88%, white);
+      }
     }
   }
 
   .action-btn.imdb-link {
+    flex: 1 1 105px;
     border-color: color-mix(in oklab, var(--accent-primary) 45%, transparent);
     color: var(--accent-primary);
+  }
+
+  /* Tablet & Desktop Horizontal Movie Card Layout (Container Query + Viewport Fallback) */
+  @media (min-width: 700px) {
+    .movie-card:has(> .movie-poster) {
+      grid-template-columns: minmax(220px, 285px) 1fr;
+      grid-template-areas:
+        "poster header"
+        "poster content"
+        "poster footer";
+      align-items: start;
+      column-gap: 2.1rem;
+      row-gap: 1.1rem;
+    }
+
+    .movie-card > .movie-poster {
+      grid-area: poster;
+      inline-size: 100%;
+      max-inline-size: 285px;
+      border-radius: 1.15rem;
+    }
+
+    .movie-card > header {
+      grid-area: header;
+      align-items: flex-start;
+      text-align: start;
+    }
+
+    .movie-card > .movie-body {
+      grid-area: content;
+      gap: 1rem;
+    }
+
+    .movie-card .meta-ribbon,
+    .movie-card .genre-list {
+      justify-content: flex-start;
+    }
+
+    .movie-card > footer {
+      grid-area: footer;
+      justify-content: flex-start;
+    }
+
+    .movie-card .action-btn {
+      flex: 0 1 auto;
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @container (min-width: 640px) {
+    .movie-card:has(> .movie-poster) {
+      grid-template-columns: minmax(220px, 285px) 1fr;
+      grid-template-areas:
+        "poster header"
+        "poster content"
+        "poster footer";
+      align-items: start;
+      column-gap: 2.1rem;
+      row-gap: 1.1rem;
+    }
+
+    .movie-card > .movie-poster {
+      grid-area: poster;
+      inline-size: 100%;
+      max-inline-size: 285px;
+      border-radius: 1.15rem;
+    }
+
+    .movie-card > header {
+      grid-area: header;
+      align-items: flex-start;
+      text-align: start;
+    }
+
+    .movie-card > .movie-body {
+      grid-area: content;
+      gap: 1rem;
+    }
+
+    .movie-card .meta-ribbon,
+    .movie-card .genre-list {
+      justify-content: flex-start;
+    }
+
+    .movie-card > footer {
+      grid-area: footer;
+      justify-content: flex-start;
+    }
+
+    .movie-card .action-btn {
+      flex: 0 1 auto;
+      padding-inline: 1.5rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
