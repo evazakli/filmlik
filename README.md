@@ -66,29 +66,6 @@ film_oneri/
 
 ---
 
-## 🚀 Kurulum ve Kullanım
-
-### Bilgisayarda Doğrudan Çalıştırma (`file://`)
-Veri seti `movies-data.js` üzerinden yüklendiği için tarayıcıların yerel dosya (`CORS`) engeline takılmaz. Herhangi bir sunucu kurmadan doğrudan **`index.html`** dosyasına çift tıklayarak tarayıcınızda açabilir ve hemen kullanabilirsiniz.
-
-### GitHub Pages Üzerinde Yayınlama
-Proje tamamen statik yapıda olduğu için GitHub Pages üzerinde saniyeler içinde ücretsiz yayınlanabilir:
-
-1. Proje dosyalarını GitHub deponuza gönderin:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit: Film Sec random IMDb 7.0+ movie platform"
-   git branch -M main
-   git remote add origin https://github.com/<KULLANICI_ADINIZ>/<REPO_ADINIZ>.git
-   git push -u origin main
-   ```
-2. GitHub deponuzda **Settings → Pages** sekmesine gidin.
-3. **Build and deployment** bölümünde **Source** olarak `Deploy from a branch`, **Branch** olarak `main` ve `/ (root)` seçip **Save** butonuna tıklayın.
-4. Birkaç saniye içinde siteniz `https://<KULLANICI_ADINIZ>.github.io/<REPO_ADINIZ>/` adresinde yayında olacaktır.
-
----
-
 ## ♿ Erişilebilirlik & Performans Standartları
 
 - **Azaltılmış Hareket Desteği (`prefers-reduced-motion: reduce`)**: İşletim sisteminde hareket hassasiyeti ayarı açık olan kullanıcılar için yüksek hızlı animasyonlar otomatik olarak devre dışı bırakılır.
