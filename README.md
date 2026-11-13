@@ -24,9 +24,10 @@ Uygulama açıldığında kullanıcıyı hiçbir metin kalabalığı olmadan yal
 - Standart `Math.random()` yerine tarayıcının kriptografik rastgele sayı üreteci (`window.crypto.getRandomValues`) ve *rejection sampling* (modulo sapmasını sıfırlayan örnekleme) kullanılır.
 - Seçilen havuz içerisindeki her filmin önerilme olasılığı matematiksel olarak birebir eşittir.
 
-### 3. 🎭 İsteğe Bağlı Tür Filtreleme (22 Kategori)
-- Kullanıcı dilerse **"Tüm Türler"** seçeneğiyle tamamen sürpriz bir film çekebilir veya aşağıdaki 22 kategoriden birini seçerek yalnızca o türdeki `7.0+` IMDb puanlı filmler arasından seçim yapabilir:
+### 3. 🎭 İsteğe Bağlı Tür ve Yıl Aralığı Filtreleme (1916 – 2026)
+- **Tür Seçimi (22 Kategori)**: Kullanıcı dilerse **"Tüm Türler"** seçeneğiyle tamamen sürpriz bir film çekebilir veya aşağıdaki 22 kategoriden birini seçerek yalnızca o türdeki `7.0+` IMDb puanlı filmler arasından seçim yapabilir:
   > *Aksiyon, Macera, Animasyon, Biyografi, Komedi, Suç, Belgesel, Dram, Aile, Fantastik, Kara Film (Noir), Tarih, Korku, Müzik, Müzikal, Gizem, Romantik, Bilim Kurgu, Spor, Gerilim, Savaş, Western.*
+- **Yıl Aralığı Filtresi (`1916 – 2026`)**: Başlangıç ve bitiş yılı seçicileriyle (örneğin `1950 – 2026`, `1990 – 2010` veya `2020 – 2026`) yalnızca istenen dönemdeki filmler arasından öneri alınabilir.
 
 ### 4. ⚡ Butona Basıldığında Devreye Giren 3 Farklı Görsel Şov
 Her seçimde arka plandaki 3D yıldız alanı hiper-hıza (*warp speed*) geçer ve aşağıdaki üç sinematik sahneden biri sırayla çalışır:

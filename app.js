@@ -536,16 +536,90 @@ async function runRiftSpectacle(visualBox, chosenMovie, decoys) {
   coreImg.src = chosenMovie.img;
 }
 
+function populateYearSelects() {
+  const fromEl = document.getElementById('year-from-select');
+  const toEl = document.getElementById('year-to-select');
+  if (!fromEl || !toEl) return;
+
+  const minYear = 1916;
+  const maxYear = 2026;
+
+  fromEl.innerHTML = '';
+  for (let y = minYear; y <= maxYear; y++) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = String(y);
+    if (y === minYear) opt.selected = true;
+    fromEl.appendChild(opt);
+  }
+
+  toEl.innerHTML = '';
+  for (let y = maxYear; y >= minYear; y--) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = String(y);
+    if (y === maxYear) opt.selected = true;
+    toEl.appendChild(opt);
+  }
+
+  fromEl.addEventListener('change', () => {
+    const fromVal = Number(fromEl.value) || minYear;
+    const toVal = Number(toEl.value) || maxYear;
+    if (fromVal > toVal) {
+      toEl.value = String(fromVal);
+    }
+  });
+
+  toEl.addEventListener('change', () => {
+    const fromVal = Number(fromEl.value) || minYear;
+    const toVal = Number(toEl.value) || maxYear;
+    if (toVal < fromVal) {
+      fromEl.value = String(toVal);
+    }
+  });
+}
+
 function getCandidatePool() {
   const selectEl = document.getElementById('genre-select');
+  const fromEl = document.getElementById('year-from-select');
+  const toEl = document.getElementById('year-to-select');
+
   const selectedGenre = selectEl ? selectEl.value : 'all';
-  if (!selectedGenre || selectedGenre === 'all') {
-    return state.movies;
+  const y1 = Number(fromEl?.value) || 1916;
+  const y2 = Number(toEl?.value) || 2026;
+  const minYear = Math.min(y1, y2);
+  const maxYear = Math.max(y1, y2);
+
+  const hasGenreFilter = Boolean(selectedGenre && selectedGenre !== 'all');
+
+  const exactMatches = state.movies.filter((m) => {
+    const yearOk = typeof m.y === 'number' && m.y >= minYear && m.y <= maxYear;
+    const genreOk = !hasGenreFilter || (Array.isArray(m.g) && m.g.includes(selectedGenre));
+    return yearOk && genreOk;
+  });
+
+  if (exactMatches.length > 0) {
+    return exactMatches;
   }
-  const filtered = state.movies.filter(
-    (m) => Array.isArray(m.g) && m.g.includes(selectedGenre)
+
+  // Fallback if a narrow year + specific genre combination has 0 titles
+  const yearOnlyMatches = state.movies.filter(
+    (m) => typeof m.y === 'number' && m.y >= minYear && m.y <= maxYear
   );
-  return filtered.length > 0 ? filtered : state.movies;
+  if (yearOnlyMatches.length > 0) {
+    return yearOnlyMatches;
+  }
+
+  if (hasGenreFilter) {
+    const genreOnlyMatches = state.movies.filter(
+      (m) => Array.isArray(m.g) && m.g.includes(selectedGenre)
+    );
+    if (genreOnlyMatches.length > 0) {
+      return genreOnlyMatches;
+    }
+  }
+
+  return state.movies;
 }
 
 async function triggerRandomMovieRoll() {
@@ -647,6 +721,7 @@ async function triggerRandomMovieRoll() {
 async function initApp() {
   canvasEngine = new VortexCanvasEngine(document.getElementById('vortex-canvas'));
   setupPointerInteractions();
+  populateYearSelects();
 
   const rollBtn = document.getElementById('roll-movie-btn');
   const genreSelect = document.getElementById('genre-select');
