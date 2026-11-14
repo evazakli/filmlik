@@ -540,8 +540,8 @@ function populateYearSelects() {
   const toEl = document.getElementById('year-to-select');
   if (!fromEl || !toEl) return;
 
-  const minYear = 1916;
-  const maxYear = 2026;
+  const minYear = 1915;
+  const maxYear = 2027;
 
   fromEl.innerHTML = '';
   for (let y = minYear; y <= maxYear; y++) {
@@ -578,44 +578,157 @@ function populateYearSelects() {
   });
 }
 
+function formatRatingLabel(val) {
+  if (val === 0) return '0';
+  if (val === 10) return '10';
+  return val.toFixed(1);
+}
+
+function setupRatingRangeSliders() {
+  const stage = document.getElementById('rating-slider-stage');
+  const minSlider = document.getElementById('rating-min-slider');
+  const maxSlider = document.getElementById('rating-max-slider');
+  const minBadge = document.getElementById('rating-min-badge');
+  const maxBadge = document.getElementById('rating-max-badge');
+  if (!stage || !minSlider || !maxSlider || !minBadge || !maxBadge) return;
+
+  const syncSliders = (activeWhich) => {
+    let minVal = parseFloat(minSlider.value);
+    let maxVal = parseFloat(maxSlider.value);
+    if (Number.isNaN(minVal)) minVal = 7.0;
+    if (Number.isNaN(maxVal)) maxVal = 10.0;
+
+    if (activeWhich === 'min' && minVal > maxVal) {
+      minVal = maxVal;
+      minSlider.value = String(minVal);
+    } else if (activeWhich === 'max' && maxVal < minVal) {
+      maxVal = minVal;
+      maxSlider.value = String(maxVal);
+    }
+
+    const minRatio = minVal / 10;
+    const maxRatio = maxVal / 10;
+    stage.style.setProperty('--min-ratio', minRatio.toFixed(3));
+    stage.style.setProperty('--max-ratio', maxRatio.toFixed(3));
+    stage.style.setProperty('--min-pct', `${(minRatio * 100).toFixed(1)}%`);
+    stage.style.setProperty('--max-pct', `${(maxRatio * 100).toFixed(1)}%`);
+    stage.dataset.badgesClose = maxVal - minVal < 1.3 ? 'true' : 'false';
+
+    const minText = formatRatingLabel(minVal);
+    const maxText = formatRatingLabel(maxVal);
+    minBadge.textContent = minText;
+    maxBadge.textContent = maxText;
+    minSlider.setAttribute('aria-valuetext', `En düşük puan ${minText}`);
+    maxSlider.setAttribute('aria-valuetext', `En yüksek puan ${maxText}`);
+
+    // If both thumbs are pushed to the right edge, keep min thumb on top so user can drag it left
+    if (minVal > 8.5) {
+      minSlider.style.zIndex = '4';
+      maxSlider.style.zIndex = '3';
+    } else {
+      minSlider.style.zIndex = '3';
+      maxSlider.style.zIndex = '4';
+    }
+  };
+
+  minSlider.addEventListener('input', () => syncSliders('min'));
+  maxSlider.addEventListener('input', () => syncSliders('max'));
+
+  // Smart pointer proximity so tapping/dragging anywhere on the line grabs the nearest thumb
+  const prioritizeClosestThumb = (clientX) => {
+    const rect = stage.getBoundingClientRect();
+    if (!rect.width) return;
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetScore = Math.round(ratio * 100) / 10;
+    const minVal = parseFloat(minSlider.value) || 0;
+    const maxVal = parseFloat(maxSlider.value) || 10;
+    const distMin = Math.abs(targetScore - minVal);
+    const distMax = Math.abs(targetScore - maxVal);
+
+    if (distMin < distMax || (distMin === distMax && targetScore < minVal)) {
+      minSlider.style.zIndex = '4';
+      maxSlider.style.zIndex = '3';
+    } else {
+      maxSlider.style.zIndex = '4';
+      minSlider.style.zIndex = '3';
+    }
+  };
+
+  stage.addEventListener('pointermove', (e) => {
+    if (e.buttons === 0) {
+      prioritizeClosestThumb(e.clientX);
+    }
+  });
+
+  stage.addEventListener('pointerdown', (e) => {
+    prioritizeClosestThumb(e.clientX);
+    if (e.target === stage) {
+      const rect = stage.getBoundingClientRect();
+      if (!rect.width) return;
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const tappedVal = Math.round(ratio * 100) / 10;
+      const minVal = parseFloat(minSlider.value) || 0;
+      const maxVal = parseFloat(maxSlider.value) || 10;
+      if (Math.abs(tappedVal - minVal) <= Math.abs(tappedVal - maxVal)) {
+        minSlider.value = String(Math.min(tappedVal, maxVal));
+        syncSliders('min');
+      } else {
+        maxSlider.value = String(Math.max(tappedVal, minVal));
+        syncSliders('max');
+      }
+    }
+  });
+
+  syncSliders();
+}
+
 function getCandidatePool() {
   const selectEl = document.getElementById('genre-select');
   const fromEl = document.getElementById('year-from-select');
   const toEl = document.getElementById('year-to-select');
+  const minRatingEl = document.getElementById('rating-min-slider');
+  const maxRatingEl = document.getElementById('rating-max-slider');
 
   const selectedGenre = selectEl ? selectEl.value : 'all';
-  const y1 = Number(fromEl?.value) || 1916;
-  const y2 = Number(toEl?.value) || 2026;
+  const y1 = Number(fromEl?.value) || 1915;
+  const y2 = Number(toEl?.value) || 2027;
   const minYear = Math.min(y1, y2);
   const maxYear = Math.max(y1, y2);
+
+  const r1 = minRatingEl ? parseFloat(minRatingEl.value) : 7.0;
+  const r2 = maxRatingEl ? parseFloat(maxRatingEl.value) : 10.0;
+  const minRating = Math.min(Number.isNaN(r1) ? 7.0 : r1, Number.isNaN(r2) ? 10.0 : r2);
+  const maxRating = Math.max(Number.isNaN(r1) ? 7.0 : r1, Number.isNaN(r2) ? 10.0 : r2);
 
   const hasGenreFilter = Boolean(selectedGenre && selectedGenre !== 'all');
 
   const exactMatches = state.movies.filter((m) => {
+    const ratingOk = typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating;
     const yearOk = typeof m.y === 'number' && m.y >= minYear && m.y <= maxYear;
     const genreOk = !hasGenreFilter || (Array.isArray(m.g) && m.g.includes(selectedGenre));
-    return yearOk && genreOk;
+    return ratingOk && yearOk && genreOk;
   });
 
   if (exactMatches.length > 0) {
     return exactMatches;
   }
 
-  // Fallback if a narrow year + specific genre combination has 0 titles
-  const yearOnlyMatches = state.movies.filter(
-    (m) => typeof m.y === 'number' && m.y >= minYear && m.y <= maxYear
-  );
-  if (yearOnlyMatches.length > 0) {
-    return yearOnlyMatches;
+  // Fallback 1: Match selected rating range + genre
+  const ratingAndGenreMatches = state.movies.filter((m) => {
+    const ratingOk = typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating;
+    const genreOk = !hasGenreFilter || (Array.isArray(m.g) && m.g.includes(selectedGenre));
+    return ratingOk && genreOk;
+  });
+  if (ratingAndGenreMatches.length > 0) {
+    return ratingAndGenreMatches;
   }
 
-  if (hasGenreFilter) {
-    const genreOnlyMatches = state.movies.filter(
-      (m) => Array.isArray(m.g) && m.g.includes(selectedGenre)
-    );
-    if (genreOnlyMatches.length > 0) {
-      return genreOnlyMatches;
-    }
+  // Fallback 2: Match selected rating range
+  const ratingOnlyMatches = state.movies.filter(
+    (m) => typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating
+  );
+  if (ratingOnlyMatches.length > 0) {
+    return ratingOnlyMatches;
   }
 
   return state.movies;
@@ -721,19 +834,20 @@ async function initApp() {
   canvasEngine = new VortexCanvasEngine(document.getElementById('vortex-canvas'));
   setupPointerInteractions();
   populateYearSelects();
+  setupRatingRangeSliders();
 
   const rollBtn = document.getElementById('roll-movie-btn');
   const genreSelect = document.getElementById('genre-select');
 
   if (Array.isArray(window.MOVIES_DATA) && window.MOVIES_DATA.length > 0) {
-    state.movies = window.MOVIES_DATA.filter((m) => typeof m.r === 'number' && m.r >= 7.0);
+    state.movies = window.MOVIES_DATA.filter((m) => typeof m.r === 'number');
     rollBtn.disabled = false;
   } else {
     try {
       const res = await fetch('./movies.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      state.movies = data.filter((m) => typeof m.r === 'number' && m.r >= 7.0);
+      state.movies = data.filter((m) => typeof m.r === 'number');
       rollBtn.disabled = false;
     } catch (err) {
       console.error('Failed to load movie data:', err);

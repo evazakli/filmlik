@@ -82,7 +82,7 @@
         <legend class="visually-hidden">Yıl Aralığı (Başlangıç ve Bitiş Yılı)</legend>
         <label for="year-from-select" class="visually-hidden">Başlangıç Yılı</label>
         <select id="year-from-select" name="year_from" class="year-select">
-          <option value="1916" selected>1916</option>
+          <option value="1915" selected>1915</option>
           <option value="1930">1930</option>
           <option value="1940">1940</option>
           <option value="1950">1950</option>
@@ -94,12 +94,12 @@
           <option value="2010">2010</option>
           <option value="2015">2015</option>
           <option value="2020">2020</option>
-          <option value="2026">2026</option>
+          <option value="2027">2027</option>
         </select>
         <span class="year-range-sep" aria-hidden="true">–</span>
         <label for="year-to-select" class="visually-hidden">Bitiş Yılı</label>
         <select id="year-to-select" name="year_to" class="year-select">
-          <option value="2026" selected>2026</option>
+          <option value="2027" selected>2027</option>
           <option value="2020">2020</option>
           <option value="2015">2015</option>
           <option value="2010">2010</option>
@@ -111,8 +111,43 @@
           <option value="1950">1950</option>
           <option value="1940">1940</option>
           <option value="1930">1930</option>
-          <option value="1916">1916</option>
+          <option value="1915">1915</option>
         </select>
+      </fieldset>
+
+      <fieldset class="rating-filter-group" id="rating-filter-group">
+        <legend class="visually-hidden">IMDb Puan Aralığı (0 ile 10 arası)</legend>
+        <span class="rating-bound-label" aria-hidden="true">0</span>
+        <div class="rating-slider-stage" id="rating-slider-stage">
+          <div class="rating-track-line" id="rating-track-line" aria-hidden="true"></div>
+          <output for="rating-min-slider" class="rating-thumb-badge" id="rating-min-badge">7.0</output>
+          <output for="rating-max-slider" class="rating-thumb-badge" id="rating-max-badge">10</output>
+          <label for="rating-min-slider" class="visually-hidden">En Düşük IMDb Puanı</label>
+          <input
+            type="range"
+            id="rating-min-slider"
+            name="rating_min"
+            class="rating-range-input rating-min-input"
+            min="0"
+            max="10"
+            step="0.1"
+            value="7.0"
+            aria-valuetext="En düşük puan 7.0"
+          >
+          <label for="rating-max-slider" class="visually-hidden">En Yüksek IMDb Puanı</label>
+          <input
+            type="range"
+            id="rating-max-slider"
+            name="rating_max"
+            class="rating-range-input rating-max-input"
+            min="0"
+            max="10"
+            step="0.1"
+            value="10.0"
+            aria-valuetext="En yüksek puan 10.0"
+          >
+        </div>
+        <span class="rating-bound-label" aria-hidden="true">10</span>
       </fieldset>
     </search>
 

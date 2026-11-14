@@ -15,7 +15,7 @@
 
 @layer reset {
   html, body, div, span, main, section, article, header, footer,
-  h1, h2, p, ul, li, dl, dt, dd, button, a, img, svg, canvas, search, select, fieldset, legend {
+  h1, h2, p, ul, li, dl, dt, dd, button, a, img, svg, canvas, search, select, fieldset, legend, input, output, label {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -26,12 +26,12 @@
     list-style: none;
   }
 
-  button, select {
+  button, select, input {
     font: inherit;
     color: inherit;
   }
 
-  button, select, a {
+  button, select, a, input {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -404,6 +404,210 @@
   .year-select option {
     background-color: #141624;
     color: #f4f5f8;
+  }
+
+  /* ==========================================================================
+     DUAL-THUMB IMDB RATING RANGE SLIDER (0 - 10, Default 7.0 - 10.0)
+     (modern-web-guidance: slider)
+     ========================================================================== */
+  .rating-filter-group {
+    --slider-track-size: 0.38rem;
+    --slider-thumb-size: 1.15rem;
+    --slider-track-radius: 999px;
+    --slider-thumb-radius: 50%;
+    --slider-track-color: oklch(0.28 0.03 270 / 0.85);
+    --slider-fill-color: var(--accent-primary);
+    --slider-thumb-color: var(--accent-primary);
+    --slider-direction: to right;
+
+    &:dir(rtl) {
+      --slider-direction: to left;
+    }
+
+    @media (pointer: coarse) {
+      --slider-thumb-size: 1.35rem;
+      --slider-track-size: 0.42rem;
+    }
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    inline-size: min(100%, 19rem);
+    min-block-size: 3.1rem;
+    padding-block-start: 0.85rem;
+    padding-block-end: 0.2rem;
+    padding-inline: 0.9rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-subtle));
+    background-color: oklch(0.16 0.03 270 / 0.9);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px -8px oklch(0 0 0 / 0.65);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 22px -4px color-mix(in oklab, var(--accent-primary) 45%, transparent);
+      }
+    }
+  }
+
+  .rating-bound-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    user-select: none;
+    line-height: 1;
+  }
+
+  .rating-slider-stage {
+    --min-ratio: 0.7;
+    --max-ratio: 1;
+    --min-pct: 70%;
+    --max-pct: 100%;
+
+    position: relative;
+    flex: 1 1 auto;
+    display: grid;
+    align-items: center;
+    inline-size: 100%;
+    block-size: 2rem;
+  }
+
+  .rating-track-line {
+    grid-area: 1 / 1;
+    inline-size: 100%;
+    block-size: var(--slider-track-size);
+    border-radius: var(--slider-track-radius);
+    background: linear-gradient(
+      var(--slider-direction),
+      var(--slider-track-color) 0% var(--min-pct),
+      var(--slider-fill-color) var(--min-pct) var(--max-pct),
+      var(--slider-track-color) var(--max-pct) 100%
+    );
+    box-shadow: 0 0 12px color-mix(in oklab, var(--accent-primary) 30%, transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .rating-thumb-badge {
+    position: absolute;
+    inset-block-start: -0.68rem;
+    translate: -50% 0;
+    padding: 0.06rem 0.34rem;
+    border-radius: 0.35rem;
+    background: oklch(0.13 0.025 270 / 0.92);
+    border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--accent-primary);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    z-index: 5;
+  }
+
+  #rating-min-badge {
+    inset-inline-start: calc(
+      var(--slider-thumb-size) / 2 + (100% - var(--slider-thumb-size)) * var(--min-ratio)
+    );
+  }
+
+  #rating-max-badge {
+    inset-inline-start: calc(
+      var(--slider-thumb-size) / 2 + (100% - var(--slider-thumb-size)) * var(--max-ratio)
+    );
+  }
+
+  .rating-slider-stage[data-badges-close="true"] #rating-min-badge {
+    translate: -92% 0;
+  }
+
+  .rating-slider-stage[data-badges-close="true"] #rating-max-badge {
+    translate: -8% 0;
+  }
+
+  .rating-range-input {
+    grid-area: 1 / 1;
+    appearance: none;
+    -webkit-appearance: none;
+    inline-size: 100%;
+    block-size: 2rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .rating-range-input:focus-visible {
+    outline: 2px solid var(--slider-fill-color);
+    outline-offset: 4px;
+    border-radius: 999px;
+  }
+
+  /* WebKit/Blink track and thumb (declared in separate block per modern-web-guidance: slider) */
+  .rating-range-input::-webkit-slider-runnable-track {
+    block-size: var(--slider-track-size);
+    border: 0;
+    border-radius: var(--slider-track-radius);
+    background: transparent;
+  }
+
+  .rating-range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    inline-size: var(--slider-thumb-size);
+    block-size: var(--slider-thumb-size);
+    margin-block-start: calc(
+      (var(--slider-track-size) - var(--slider-thumb-size)) / 2
+    );
+    border: 2px solid var(--bg-void);
+    border-radius: var(--slider-thumb-radius);
+    background: var(--slider-thumb-color);
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--accent-primary) 55%, white),
+      0 4px 10px oklch(0 0 0 / 0.7);
+    pointer-events: auto;
+    cursor: grab;
+    transition: scale 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .rating-range-input::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    scale: 1.18;
+  }
+
+  /* Firefox track and thumb (declared in separate block per modern-web-guidance: slider) */
+  .rating-range-input::-moz-range-track {
+    block-size: var(--slider-track-size);
+    border: 0;
+    border-radius: var(--slider-track-radius);
+    background: transparent;
+  }
+
+  .rating-range-input::-moz-range-thumb {
+    inline-size: var(--slider-thumb-size);
+    block-size: var(--slider-thumb-size);
+    border: 2px solid var(--bg-void);
+    border-radius: var(--slider-thumb-radius);
+    background: var(--slider-thumb-color);
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--accent-primary) 55%, white),
+      0 4px 10px oklch(0 0 0 / 0.7);
+    pointer-events: auto;
+    cursor: grab;
+    transition: scale 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .rating-range-input::-moz-range-thumb:active {
+    cursor: grabbing;
+    scale: 1.18;
   }
 
   /* ==========================================================================
