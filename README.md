@@ -3,21 +3,21 @@
 ![HTML5](https://img.shields.io/badge/HTML5-Semantic-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![Modern CSS](https://img.shields.io/badge/CSS-OKLCH%20%26%20View%20Transitions-1572B6?style=flat-square&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2026%20Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![IMDb Dataset](https://img.shields.io/badge/IMDb%20Havuzu-11.128%20Film-F5C518?style=flat-square&logo=imdb&logoColor=black)
+![IMDb Dataset](https://img.shields.io/badge/IMDb%20Havuzu-69.028%20Film-F5C518?style=flat-square&logo=imdb&logoColor=black)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Ready-222222?style=flat-square&logo=githubpages&logoColor=white)
 
 ![filmlik](og-preview.jpg)
 
 **"Bu akşam ne izlesem?"** sorusunu karmaşık menüler, reklamlar ve algoritma önyargıları olmadan çözen; ultra-minimalist, görsel ve işitsel olarak şaşırtıcı bir sinema keşif uygulaması: **filmlik**.
 
-Uygulama açıldığında kullanıcıyı hiçbir metin kalabalığı olmadan yalnızca karanlık bir uzay boşluğu, etkileşimli yıldız alanı, üst filtre kapsülleri ve merkezdeki **"FİLM SEÇ"** butonu karşılar. Puan filtresine dokunulmadığında varsayılan olarak **IMDb puanı 7.0 ve üzeri (`7.0 – 10`)** filmler önerilir; kullanıcı dilerse `0 – 10` çizgisi üzerindeki iki tutamacı daraltıp genişleterek istediği puan aralığındaki (`11.128` film içinden) yapımları keşfedebilir.
+Uygulama açıldığında kullanıcıyı hiçbir metin kalabalığı olmadan yalnızca karanlık bir uzay boşluğu, etkileşimli yıldız alanı, üst filtre kapsülleri ve merkezdeki **"FİLM SEÇ"** butonu karşılar. Puan filtresine dokunulmadığında varsayılan olarak **IMDb puanı 7.0 ve üzeri (`7.0 – 10`)** olan **18.193** film arasından seçim yapılır; kullanıcı dilerse `0 – 10` çizgisi üzerindeki iki tutamacı daraltıp genişleterek istediği puan aralığındaki (**toplam 69.028 film** içinden) yapımları keşfedebilir.
 
 ---
 
 ## ✨ Öne Çıkan Özellikler
 
-### 1. 🏆 Geniş IMDb Veri Havuzu (11.128 Film)
-- IMDb üzerinden kazınarak oluşturulan veri seti, `1.0` ile `9.7` arasında puanlanmış **11.128 gerçek filmi** içerir (varsayılan filtre `7.0 – 10` aralığına ayarlıdır).
+### 1. 🏆 Dev IMDb Veri Havuzu (69.028 Film)
+- IMDb üzerinden kazınarak oluşturulan veri seti, `1.0` ile `9.7` arasında puanlanmış **69.028 gerçek filmi** içerir (`7.0+` puanlı **18.193** film, `5.0 – 6.9` arası **37.854** film, `5.0` altı **12.981** film).
 - Her film kaydında; **Türkçe/yerel başlık**, **orijinal başlık**, **yayın yılı**, **süre (dk)**, **IMDb puanı**, **film türleri**, **konu özeti**, **yönetmen**, **başrol oyuncuları**, **yüksek çözünürlüklü afiş** ve doğrudan **IMDb bağlantı kimliği (`tt...`)** yer alır.
 
 ### 2. 🎲 %100 Adil, Kriptografik Rastgelelik
@@ -56,7 +56,7 @@ film_oneri/
 ├── index.html            # Ultra-sade semantik HTML5 sahne, Open Graph ve film kartı yapısı
 ├── style.css             # @layer mimarisi, OKLCH renk sistemi, fizik tabanlı yay animasyonları
 ├── app.js                # Kriptografik rastgelelik motoru, 3D Canvas, Web Audio API sentezleyici
-├── movies-data.js        # 11.128 adet IMDb filminin çevrimdışı/CORS-uyumlu veri paketi
+├── movies-data.js        # 69.028 adet IMDb filminin çevrimdışı/CORS-uyumlu veri paketi
 ├── favicon.svg           # Vektörel sekme ikonu (Favicon)
 ├── favicon.png           # 64x64 sekme ikonu
 ├── apple-touch-icon.png  # 180x180 mobil ana ekran ikonu
