@@ -313,13 +313,133 @@ class VortexCanvasEngine {
 }
 
 const state = {
-  movies: [],
   isRolling: false,
-  chaosCounter: 0
+  chaosCounter: 0,
+  nextPick: null
 };
 
 const synth = new CinemaSynth();
 let canvasEngine = null;
+
+/* ==========================================================================
+   LAZY DATA LAYER
+   - data/index.js  : tiny filter index (rating buckets, years, genre combos)
+   - data/s/<n>.js  : movie details in shards of 200, loaded only on demand
+   Script injection (JSONP-style) works on both file:// and https://.
+   ========================================================================== */
+const IMG_PREFIX = 'https://m.media-amazon.com/images/M/';
+const IMG_FULL = '._V1_QL85_UX500_.jpg';
+const IMG_SMALL = '._V1_QL75_UX300_.jpg';
+
+const data = {
+  index: null,
+  years: null,
+  comboIds: null,
+  comboMasks: null,
+  genreBits: {},
+  shards: new Map(),
+  shardPromises: new Map(),
+  indexPromise: null
+};
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => {
+      s.remove();
+      resolve();
+    };
+    s.onerror = () => {
+      s.remove();
+      reject(new Error(`Failed to load ${src}`));
+    };
+    document.head.appendChild(s);
+  });
+}
+
+function decodeBase64(b64) {
+  if (typeof Uint8Array.fromBase64 === 'function') return Uint8Array.fromBase64(b64);
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+window.__filmlikIndex = (idx) => {
+  const n = idx.n;
+  const comboBytes = decodeBase64(idx.c);
+  const comboIds = new Uint16Array(n);
+  for (let i = 0; i < n; i++) comboIds[i] = comboBytes[i] | (comboBytes[n + i] << 8);
+  data.years = decodeBase64(idx.y);
+  data.comboIds = comboIds;
+  data.comboMasks = Uint32Array.from(idx.combos);
+  idx.genres.forEach((g, bit) => {
+    data.genreBits[g] = 1 << bit;
+  });
+  data.index = idx;
+};
+
+if (window.__FILMLIK_INDEX__) {
+  window.__filmlikIndex(window.__FILMLIK_INDEX__);
+  delete window.__FILMLIK_INDEX__;
+}
+
+window.__filmlikShard = (k, movies) => {
+  data.shards.set(k, movies);
+};
+
+function ensureIndex() {
+  if (data.index) return Promise.resolve(data.index);
+  if (!data.indexPromise) {
+    data.indexPromise = loadScript('data/index.js').then(() => data.index);
+    data.indexPromise.catch(() => {
+      data.indexPromise = null;
+    });
+  }
+  return data.indexPromise;
+}
+
+function loadShard(k) {
+  if (data.shards.has(k)) return Promise.resolve(data.shards.get(k));
+  if (!data.shardPromises.has(k)) {
+    const p = loadScript(`data/s/${k}.js?v=${data.index.v}`).then(() => data.shards.get(k));
+    p.catch(() => data.shardPromises.delete(k));
+    data.shardPromises.set(k, p);
+  }
+  return data.shardPromises.get(k);
+}
+
+function hydrateMovie(raw, small = false) {
+  return {
+    ...raw,
+    img: IMG_PREFIX + raw.i + (small ? IMG_SMALL : IMG_FULL)
+  };
+}
+
+async function getMovieAt(globalIndex) {
+  const size = data.index.s;
+  const k = Math.floor(globalIndex / size);
+  const shard = await loadShard(k);
+  return { movie: hydrateMovie(shard[globalIndex % size]), shard };
+}
+
+function preloadImage(src, priority = 'low') {
+  const img = new Image();
+  img.decoding = 'async';
+  img.fetchPriority = priority;
+  img.src = src;
+  return img;
+}
+
+function runWhenIdle(fn, timeout = 1500) {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(fn, { timeout });
+  } else {
+    setTimeout(fn, 200);
+  }
+}
 
 function setupPointerInteractions() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
@@ -381,6 +501,7 @@ function applyMovieTheme(movie) {
 
 function populateMovieCard(movie) {
   const poster = document.getElementById('movie-poster');
+  poster.fetchPriority = 'high';
   poster.src = movie.img;
   poster.alt = `${movie.t} (${movie.y || ''}) film afişi`;
 
@@ -404,13 +525,14 @@ function populateMovieCard(movie) {
   document.getElementById('movie-runtime-chip').textContent = movie.m ? `${movie.m} dk` : '—';
 
   const genresList = document.getElementById('movie-genres-list');
-  genresList.innerHTML = '';
+  const genresFrag = document.createDocumentFragment();
   for (const g of movie.g || []) {
     const li = document.createElement('li');
     li.className = 'genre-pill';
     li.textContent = GENRE_TR_MAP[g] || g;
-    genresList.appendChild(li);
+    genresFrag.appendChild(li);
   }
+  genresList.replaceChildren(genresFrag);
 
   const plotEl = document.getElementById('movie-plot-text');
   plotEl.textContent = movie.p || '';
@@ -426,15 +548,18 @@ function populateMovieCard(movie) {
 
 // Pure Visual Spectacle 1: 3D Poster Vortex Tunnel (Mobile-Responsive Spread)
 async function runVortexSpectacle(visualBox, chosenMovie, decoys) {
-  visualBox.innerHTML = '';
+  const frag = document.createDocumentFragment();
   const posterNodes = decoys.slice(0, 9).map((m) => {
     const img = document.createElement('img');
     img.className = 'flying-poster';
+    img.decoding = 'async';
+    img.fetchPriority = 'low';
     img.src = m.img;
     img.alt = '';
-    visualBox.appendChild(img);
+    frag.appendChild(img);
     return img;
   });
+  visualBox.replaceChildren(frag);
 
   const vw = window.innerWidth;
   const spreadX = Math.min(95, Math.max(32, vw * 0.11));
@@ -470,10 +595,8 @@ async function runVortexSpectacle(visualBox, chosenMovie, decoys) {
 
 // Pure Visual Spectacle 2: 3D Holographic Tarot Flip
 async function runTarotSpectacle(visualBox, chosenMovie, decoys) {
-  visualBox.innerHTML = '';
   const deck = document.createElement('div');
   deck.className = 'tarot-deck-stage';
-  visualBox.appendChild(deck);
 
   const cards = [];
   const winSlot = 2;
@@ -484,12 +607,13 @@ async function runTarotSpectacle(visualBox, chosenMovie, decoys) {
     card.innerHTML = `
       <div class="tarot-face tarot-back"></div>
       <div class="tarot-face tarot-front">
-        <img src="${movieForSlot.img}" alt="">
+        <img src="${movieForSlot.img}" alt="" decoding="async" fetchpriority="low">
       </div>
     `;
     deck.appendChild(card);
     cards.push(card);
   }
+  visualBox.replaceChildren(deck);
 
   const waveAmp = window.innerWidth < 640 ? 18 : 30;
   for (let step = 0; step < 12; step++) {
@@ -514,16 +638,15 @@ async function runTarotSpectacle(visualBox, chosenMovie, decoys) {
 
 // Pure Visual Spectacle 3: Quantum Rift Reality Fracture
 async function runRiftSpectacle(visualBox, chosenMovie, decoys) {
-  visualBox.innerHTML = '';
   const chamber = document.createElement('div');
   chamber.className = 'rift-chamber';
   chamber.innerHTML = `
     <div class="rift-ring-wave"></div>
     <div class="rift-portal-core">
-      <img id="rift-core-img" src="${decoys[0].img}" alt="">
+      <img id="rift-core-img" src="${decoys[0].img}" alt="" decoding="async" fetchpriority="low">
     </div>
   `;
-  visualBox.appendChild(chamber);
+  visualBox.replaceChildren(chamber);
   const coreImg = document.getElementById('rift-core-img');
 
   for (let step = 0; step < 15; step++) {
@@ -543,23 +666,25 @@ function populateYearSelects() {
   const minYear = 1915;
   const maxYear = 2027;
 
-  fromEl.innerHTML = '';
+  const fromFrag = document.createDocumentFragment();
   for (let y = minYear; y <= maxYear; y++) {
     const opt = document.createElement('option');
     opt.value = String(y);
     opt.textContent = String(y);
     if (y === minYear) opt.selected = true;
-    fromEl.appendChild(opt);
+    fromFrag.appendChild(opt);
   }
+  fromEl.replaceChildren(fromFrag);
 
-  toEl.innerHTML = '';
+  const toFrag = document.createDocumentFragment();
   for (let y = maxYear; y >= minYear; y--) {
     const opt = document.createElement('option');
     opt.value = String(y);
     opt.textContent = String(y);
     if (y === maxYear) opt.selected = true;
-    toEl.appendChild(opt);
+    toFrag.appendChild(opt);
   }
+  toEl.replaceChildren(toFrag);
 
   fromEl.addEventListener('change', () => {
     const fromVal = Number(fromEl.value) || minYear;
@@ -682,61 +807,152 @@ function setupRatingRangeSliders() {
   syncSliders();
 }
 
-function getCandidatePool() {
+function readFilters() {
   const selectEl = document.getElementById('genre-select');
   const fromEl = document.getElementById('year-from-select');
   const toEl = document.getElementById('year-to-select');
   const minRatingEl = document.getElementById('rating-min-slider');
   const maxRatingEl = document.getElementById('rating-max-slider');
 
-  const selectedGenre = selectEl ? selectEl.value : 'all';
+  const genre = (selectEl && selectEl.value) || 'all';
   const y1 = Number(fromEl?.value) || 1915;
   const y2 = Number(toEl?.value) || 2027;
-  const minYear = Math.min(y1, y2);
-  const maxYear = Math.max(y1, y2);
+  const r1 = parseFloat(minRatingEl?.value);
+  const r2 = parseFloat(maxRatingEl?.value);
+  const rA = Number.isNaN(r1) ? 7.0 : r1;
+  const rB = Number.isNaN(r2) ? 10.0 : r2;
 
-  const r1 = minRatingEl ? parseFloat(minRatingEl.value) : 7.0;
-  const r2 = maxRatingEl ? parseFloat(maxRatingEl.value) : 10.0;
-  const minRating = Math.min(Number.isNaN(r1) ? 7.0 : r1, Number.isNaN(r2) ? 10.0 : r2);
-  const maxRating = Math.max(Number.isNaN(r1) ? 7.0 : r1, Number.isNaN(r2) ? 10.0 : r2);
+  const f = {
+    genre,
+    minYear: Math.min(y1, y2),
+    maxYear: Math.max(y1, y2),
+    minCode: Math.round(Math.min(rA, rB) * 10),
+    maxCode: Math.round(Math.max(rA, rB) * 10)
+  };
+  f.key = `${f.genre}|${f.minYear}-${f.maxYear}|${f.minCode}-${f.maxCode}`;
+  return f;
+}
 
-  const hasGenreFilter = Boolean(selectedGenre && selectedGenre !== 'all');
+// Builds the candidate pool as global indices using the compact index (no movie details needed).
+// Movies are sorted by rating in the index, so the rating filter is a single contiguous slice.
+function buildPool(f) {
+  const { starts, n } = data.index;
+  const lo = starts[Math.max(0, Math.min(101, f.minCode))];
+  const hi = starts[Math.max(0, Math.min(101, f.maxCode + 1))];
+  const years = data.years;
+  const comboIds = data.comboIds;
+  const masks = data.comboMasks;
+  const bit = f.genre !== 'all' ? data.genreBits[f.genre] || 0 : 0;
+  const yLo = f.minYear - 1900;
+  const yHi = f.maxYear - 1900;
 
-  const exactMatches = state.movies.filter((m) => {
-    const ratingOk = typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating;
-    const yearOk = typeof m.y === 'number' && m.y >= minYear && m.y <= maxYear;
-    const genreOk = !hasGenreFilter || (Array.isArray(m.g) && m.g.includes(selectedGenre));
-    return ratingOk && yearOk && genreOk;
-  });
+  const genreOk = (i) => !bit || (masks[comboIds[i]] & bit) !== 0;
+  const yearOk = (i) => years[i] !== 0 && years[i] >= yLo && years[i] <= yHi;
+  const collect = (from, to, test) => {
+    const out = [];
+    for (let i = from; i < to; i++) if (test(i)) out.push(i);
+    return out;
+  };
 
-  if (exactMatches.length > 0) {
-    return exactMatches;
+  // Exact: rating + year + genre
+  let test = (i) => yearOk(i) && genreOk(i);
+  let indices = collect(lo, hi, test);
+
+  // Fallback 1: rating + genre
+  if (!indices.length) {
+    test = genreOk;
+    indices = collect(lo, hi, test);
   }
-
-  // Fallback 1: Match selected rating range + genre
-  const ratingAndGenreMatches = state.movies.filter((m) => {
-    const ratingOk = typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating;
-    const genreOk = !hasGenreFilter || (Array.isArray(m.g) && m.g.includes(selectedGenre));
-    return ratingOk && genreOk;
-  });
-  if (ratingAndGenreMatches.length > 0) {
-    return ratingAndGenreMatches;
+  // Fallback 2: rating only
+  if (!indices.length && hi > lo) {
+    test = () => true;
+    indices = collect(lo, hi, test);
   }
-
-  // Fallback 2: Match selected rating range
-  const ratingOnlyMatches = state.movies.filter(
-    (m) => typeof m.r === 'number' && m.r >= minRating && m.r <= maxRating
-  );
-  if (ratingOnlyMatches.length > 0) {
-    return ratingOnlyMatches;
+  // Fallback 3: everything
+  if (!indices.length) {
+    indices = collect(0, n, () => true);
+    return { indices, matches: () => true };
   }
+  return { indices, matches: (i) => i >= lo && i < hi && test(i) };
+}
 
-  return state.movies;
+function pickDecoys(shard, shardOffset, chosenIndex, matches, count = 10) {
+  const preferred = [];
+  const others = [];
+  for (let j = 0; j < shard.length; j++) {
+    const gi = shardOffset + j;
+    if (gi === chosenIndex) continue;
+    (matches(gi) ? preferred : others).push(j);
+  }
+  const out = [];
+  const take = (list) => {
+    while (out.length < count && list.length) {
+      const k = getCryptoRandomInt(list.length);
+      out.push(hydrateMovie(shard[list[k]], true));
+      list[k] = list[list.length - 1];
+      list.pop();
+    }
+  };
+  take(preferred);
+  take(others);
+  return out;
+}
+
+// 100% unbiased cryptographic uniform pick from the filtered pool, then load only its shard.
+async function preparePick(f) {
+  await ensureIndex();
+  const pool = buildPool(f);
+  const globalIndex = pool.indices[getCryptoRandomInt(pool.indices.length)];
+  const { movie, shard } = await getMovieAt(globalIndex);
+  const offset = Math.floor(globalIndex / data.index.s) * data.index.s;
+  const decoys = pickDecoys(shard, offset, globalIndex, pool.matches);
+  return { key: f.key, movie, decoys };
+}
+
+const DECOYS_PER_MODE = { vortex: 9, tarot: 5, rift: 10 };
+const SPECTACLE_MODES = ['vortex', 'tarot', 'rift'];
+
+// Pre-pick the next random film in the background so the next tap is instant.
+let warmTimer = 0;
+function warmNextPick(delay = 0) {
+  clearTimeout(warmTimer);
+  warmTimer = setTimeout(() => {
+    runWhenIdle(async () => {
+      if (state.isRolling) return;
+      const f = readFilters();
+      if (state.nextPick && state.nextPick.key === f.key) return;
+      const promise = preparePick(f);
+      state.nextPick = { key: f.key, promise };
+      try {
+        const pick = await promise;
+        if (state.nextPick?.promise !== promise) return;
+        preloadImage(pick.movie.img);
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          const mode = SPECTACLE_MODES[state.chaosCounter % SPECTACLE_MODES.length];
+          pick.decoys.slice(0, DECOYS_PER_MODE[mode]).forEach((d) => preloadImage(d.img));
+        }
+      } catch (err) {
+        if (state.nextPick?.promise === promise) state.nextPick = null;
+      }
+    });
+  }, delay);
+}
+
+async function resolvePick(f) {
+  const reusable = state.nextPick && state.nextPick.key === f.key ? state.nextPick.promise : null;
+  state.nextPick = null;
+  if (reusable) {
+    try {
+      return await reusable;
+    } catch {
+      /* fall through to a fresh pick */
+    }
+  }
+  return preparePick(f);
 }
 
 async function triggerRandomMovieRoll() {
-  const pool = getCandidatePool();
-  if (state.isRolling || pool.length === 0) return;
+  if (state.isRolling) return;
   state.isRolling = true;
 
   // Subtle mobile haptic feedback on tap
@@ -750,20 +966,14 @@ async function triggerRandomMovieRoll() {
   rollBtn.disabled = true;
   if (rerollBtn) rerollBtn.disabled = true;
 
-  // Hide the initial big button once clicked
-  portalZone.hidden = true;
-
-  // 100% Unbiased Cryptographic Uniform Random Selection within the 7.0+ (& selected genre) pool
-  const chosenIndex = getCryptoRandomInt(pool.length);
-  const chosenMovie = pool[chosenIndex];
-
-  const preloadImg = new Image();
-  preloadImg.src = chosenMovie.img;
-
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const artifactWrapper = document.getElementById('movie-artifact-wrapper');
   const spectacleStage = document.getElementById('spectacle-stage');
   const visualBox = document.getElementById('spectacle-visual-box');
+  const filters = readFilters();
+
+  // Hide the initial big button once clicked
+  portalZone.hidden = true;
 
   if (window.scrollY > 40) {
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
@@ -773,16 +983,33 @@ async function triggerRandomMovieRoll() {
     if (!artifactWrapper.hidden) {
       await hideElement(artifactWrapper);
     }
-
     spectacleStage.hidden = false;
     spectacleStage.classList.remove('flare-active');
-
+    visualBox.innerHTML = '';
     if (canvasEngine) canvasEngine.setWarp(24);
     synth.playPortalCharge();
+  }
 
-    const decoys = Array.from({ length: 16 }, () => pool[getCryptoRandomInt(pool.length)]);
-    const modes = ['vortex', 'tarot', 'rift'];
-    const mode = modes[state.chaosCounter % modes.length];
+  let pick;
+  try {
+    pick = await resolvePick(filters);
+  } catch (err) {
+    console.error('Film verisi yüklenemedi:', err);
+    spectacleStage.hidden = true;
+    if (canvasEngine) canvasEngine.setWarp(1);
+    if (artifactWrapper.hidden) portalZone.hidden = false;
+    rollBtn.disabled = false;
+    if (rerollBtn) rerollBtn.disabled = false;
+    state.isRolling = false;
+    return;
+  }
+
+  const chosenMovie = pick.movie;
+  const decoys = pick.decoys;
+  preloadImage(chosenMovie.img, 'high');
+
+  if (!reducedMotion) {
+    const mode = SPECTACLE_MODES[state.chaosCounter % SPECTACLE_MODES.length];
     state.chaosCounter++;
 
     if (mode === 'tarot') {
@@ -806,6 +1033,7 @@ async function triggerRandomMovieRoll() {
 
     await new Promise((r) => setTimeout(r, 480));
     spectacleStage.hidden = true;
+    visualBox.innerHTML = '';
   } else {
     applyMovieTheme(chosenMovie);
   }
@@ -828,9 +1056,12 @@ async function triggerRandomMovieRoll() {
   rollBtn.disabled = false;
   if (rerollBtn) rerollBtn.disabled = false;
   state.isRolling = false;
+
+  // Quietly prepare the next random film for an instant re-roll
+  warmNextPick(1200);
 }
 
-async function initApp() {
+function initApp() {
   canvasEngine = new VortexCanvasEngine(document.getElementById('vortex-canvas'));
   setupPointerInteractions();
   populateYearSelects();
@@ -838,21 +1069,12 @@ async function initApp() {
 
   const rollBtn = document.getElementById('roll-movie-btn');
   const genreSelect = document.getElementById('genre-select');
+  rollBtn.disabled = false;
 
-  if (Array.isArray(window.MOVIES_DATA) && window.MOVIES_DATA.length > 0) {
-    state.movies = window.MOVIES_DATA.filter((m) => typeof m.r === 'number');
-    rollBtn.disabled = false;
-  } else {
-    try {
-      const res = await fetch('./movies.json');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      state.movies = data.filter((m) => typeof m.r === 'number');
-      rollBtn.disabled = false;
-    } catch (err) {
-      console.error('Failed to load movie data:', err);
-    }
-  }
+  // Start fetching the small filter index right away (non-blocking), then pre-pick a film when idle
+  ensureIndex()
+    .then(() => warmNextPick())
+    .catch((err) => console.error('Film indeksi yüklenemedi:', err));
 
   genreSelect?.addEventListener('change', () => {
     const g = genreSelect.value;
@@ -861,8 +1083,17 @@ async function initApp() {
     }
   });
 
+  // Re-warm the pre-picked film whenever filters change
+  for (const id of ['genre-select', 'year-from-select', 'year-to-select', 'rating-min-slider', 'rating-max-slider']) {
+    document.getElementById(id)?.addEventListener('change', () => warmNextPick(500));
+  }
+
   rollBtn.addEventListener('click', triggerRandomMovieRoll);
   document.getElementById('reroll-btn')?.addEventListener('click', triggerRandomMovieRoll);
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}

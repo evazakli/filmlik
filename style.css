@@ -765,6 +765,7 @@
     place-items: center;
     perspective: 1100px;
     isolation: isolate;
+    contain: layout style;
     overflow: visible;
   }
 
@@ -1057,6 +1058,7 @@
     backdrop-filter: blur(22px);
     transform-style: preserve-3d;
     transition: transform 0.2s ease-out, border-color 0.3s ease;
+    contain: layout style paint;
     overflow: hidden;
 
     @supports (padding: 1cqi) {

@@ -56,7 +56,11 @@ film_oneri/
 ├── index.html            # Ultra-sade semantik HTML5 sahne, Open Graph ve film kartı yapısı
 ├── style.css             # @layer mimarisi, OKLCH renk sistemi, fizik tabanlı yay animasyonları
 ├── app.js                # Kriptografik rastgelelik motoru, 3D Canvas, Web Audio API sentezleyici
-├── movies-data.js        # 69.028 adet IMDb filminin çevrimdışı/CORS-uyumlu veri paketi
+├── data/
+│   ├── index.js          # 69.028 filmin sıkıştırılmış ikili (TypedArray) filtre indeksi (~295 KB)
+│   └── s/0.js..345.js    # İhtiyaç anında (on-demand) yüklenen 200'er filmlik veri parçaları (shards)
+├── tools/
+│   └── build-data.mjs    # Ham film verisini indeks ve 346 parçaya bölen derleme betiği
 ├── favicon.svg           # Vektörel sekme ikonu (Favicon)
 ├── favicon.png           # 64x64 sekme ikonu
 ├── apple-touch-icon.png  # 180x180 mobil ana ekran ikonu
